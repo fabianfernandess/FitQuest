@@ -4,19 +4,71 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_API_KEY } from '@env';
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-const Chat = () => {
-  const [messages, setMessages] = useState([
-    { id: 1, text: "Hi! I’m your trainer from House Elara. I’ll help you with flexibility, yoga, and mental well-being. Let's get started! Can you tell me your height and weight?", sender: 'trainer' },
-  ]);
+const Chat = ({ route }) => {
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [initialized, setInitialized] = useState(false);
+  const [model, setModel] = useState(null); // Added state to store the model
+
+  // Extracting userInfo safely with defaults
+  const userInfo = route.params?.userInfo || {};
+  const {
+    name = "User",
+    height = 0,
+    weight = 0,
+    bmi = 0,
+    exerciseLevel = "unknown",
+    house = "unknown",
+    selectedOptions = []
+  } = userInfo;
 
   useEffect(() => {
-    // Automatically send the initial message from the trainer
-    const initialMessage = "Hi! I’m your trainer from House Elara. I’ll help you with flexibility, yoga, and mental well-being. Let's get started! Can you tell me your height and weight?";
-    sendMessageToGemini([{ role: 'trainer', content: initialMessage }]);
-  }, []);
+    const initializeChat = async () => {
+      try {
+        if (!name || !house || !selectedOptions.length) {
+          console.error("Incomplete user information provided.");
+          throw new Error("Incomplete user information provided.");
+        }
+
+        // Construct the system instruction dynamically
+        const systemInstruction = `
+          You are an AI fitness trainer assigned to assist the user ${name}. 
+          They belong to the ${house}, and their fitness profile is as follows:
+          
+          - BMI: ${bmi}
+          - Height: ${height} cm
+          - Weight: ${weight} kg
+          - Exercise Level: ${exerciseLevel}
+          - Fitness Goals: ${selectedOptions.join(', ')}
+
+          Your role is to embody the traits and training approach of the ${house} to provide personalized fitness coaching. 
+          Tailor your responses to match the user's fitness goals, and offer guidance on exercises, nutrition, and motivation.
+        `;
+
+        // Initialize the model with the system instruction
+        const initializedModel = genAI.getGenerativeModel({
+          model: 'gemini-1.5-pro',
+          systemInstruction,
+        });
+
+        setModel(initializedModel); // Store the initialized model in state
+
+        const prompt = `Hello ${name}, welcome to the House of ${house}! Based on your BMI of ${bmi}, activity level (${exerciseLevel}), and your selected goals (${selectedOptions.join(', ')}), I have tailored a fitness plan for you. Let's get started!`;
+
+        const result = await initializedModel.generateContent(prompt);
+        const response = await result.response;
+        const botMessage = response.text();
+
+        setMessages([{ id: 1, text: botMessage, sender: 'trainer' }]);
+        setInitialized(true);
+      } catch (error) {
+        console.error('Error initializing chat:', error);
+      }
+    };
+
+    initializeChat();
+  }, [name, height, weight, bmi, exerciseLevel, house, selectedOptions]);
 
   const sendMessage = async () => {
     if (input.trim()) {
@@ -25,29 +77,32 @@ const Chat = () => {
       setInput('');
 
       try {
-        const response = await sendMessageToGemini([...messages, newMessage].map(msg => ({ role: msg.sender, content: msg.text })));
-        const botMessages = response.choices.map(choice => ({ id: messages.length + 2, text: choice.message.content, sender: 'trainer' }));
-        setMessages([...messages, newMessage, ...botMessages]);
+        if (model) { // Check if the model is initialized
+          const prompt = messages.map(msg => msg.text).join('\n') + `\n${input}`;
+          const result = await model.generateContent(prompt);
+          const response = await result.response;
+          const botMessage = response.text();
+
+          setMessages(prevMessages => [
+            ...prevMessages,
+            { id: prevMessages.length + 1, text: botMessage, sender: 'trainer' }
+          ]);
+        } else {
+          console.error('Model is not initialized');
+        }
       } catch (error) {
         console.error('Error sending message:', error);
       }
     }
   };
 
-  const sendMessageToGemini = async (messages) => {
-    try {
-      console.log('Sending request to Gemini API...');
-      const prompt = messages.map(msg => msg.content).join('\n');
-      const result = await model.generateContent(prompt);
-      const response = result.response;
-      const text = response.text();
-      console.log(text);
-      return { choices: [{ message: { content: text } }] };
-    } catch (error) {
-      console.error('Error communicating with Gemini API:', error);
-      throw error;
-    }
-  };
+  if (!initialized) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -132,6 +187,12 @@ const styles = StyleSheet.create({
   },
   sendButtonText: {
     color: '#fff',
+  },
+  loadingText: {
+    color: '#fff',
+    fontSize: 20,
+    textAlign: 'center',
+    marginTop: 20,
   },
 });
 

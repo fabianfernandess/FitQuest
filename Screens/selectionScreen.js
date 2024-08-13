@@ -1,6 +1,6 @@
 // selectionScreen.js
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Button } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 const options = [
   "I want to lose weight",
@@ -9,7 +9,8 @@ const options = [
   "I prefer exercising at home"
 ];
 
-const SelectionScreen = ({ navigation }) => {
+const SelectionScreen = ({ route, navigation }) => {
+  const { name, height, weight, bmi, exerciseLevel } = route.params;
   const [selectedOptions, setSelectedOptions] = useState([]);
 
   const toggleOption = (option) => {
@@ -22,7 +23,14 @@ const SelectionScreen = ({ navigation }) => {
 
   const handleNext = () => {
     // Pass the selected options to the next screen
-    navigation.navigate('Loading', { selectedOptions });
+    navigation.navigate('HouseSelection', {
+      name,
+      height,
+      weight,
+      bmi,
+      exerciseLevel,
+      selectedOptions
+    });
   };
 
   return (
@@ -55,20 +63,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#001F3F',
+    paddingHorizontal: 20,
   },
   title: {
     fontSize: 24,
     color: '#fff',
     marginBottom: 20,
+    textAlign: 'center',
   },
   optionsContainer: {
-    width: '80%',
+    width: '100%',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
   optionButton: {
     backgroundColor: '#1f7a8c',
-    padding: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
     borderRadius: 20,
-    marginBottom: 10,
+    margin: 5,
     alignItems: 'center',
   },
   selectedOption: {

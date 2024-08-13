@@ -1,6 +1,7 @@
-// houseSelectionScreen.js
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { getAuth } from 'firebase/auth';
+import { getDatabase, ref, set } from 'firebase/database';
 
 const houses = [
   {
@@ -24,7 +25,11 @@ const houses = [
 ];
 
 const HouseSelectionScreen = ({ route, navigation }) => {
-  const { selectedOptions } = route.params;
+  // Extract all the parameters from the route
+  const { name, height, weight, bmi, exerciseLevel, selectedOptions } = route.params;
+  
+  const auth = getAuth();
+  const db = getDatabase();
 
   const determineHouse = () => {
     for (let house of houses) {
@@ -38,8 +43,27 @@ const HouseSelectionScreen = ({ route, navigation }) => {
   const selectedHouse = determineHouse();
 
   const handleConfirm = () => {
-    navigation.navigate('Chat', { selectedHouse });
-  };
+    const userId = auth.currentUser.uid;
+    const userRef = ref(db, `users/${userId}`);
+    
+    const userInfo = {
+      name,
+      height,
+      weight,
+      bmi,
+      exerciseLevel,
+      house: selectedHouse.name,
+      selectedOptions
+    };
+    
+    set(userRef, userInfo)
+      .then(() => {
+        navigation.navigate('Chat', { userInfo });
+      })
+      .catch(error => {
+        console.error("Error writing document: ", error);
+      });
+};
 
   return (
     <View style={styles.container}>

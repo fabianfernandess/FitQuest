@@ -1,3 +1,4 @@
+// App.js
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -12,6 +13,7 @@ import LoginScreen from './Screens/loginScreen';
 import SignUpScreen from './Screens/signUpScreen';
 import UserInfoScreen from './Screens/userInfoScreen';
 import BMIScreen from './Screens/BMIScreen';
+import ExerciseLevelScreen from './Screens/exerciseLevelScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -52,6 +54,10 @@ export default function App() {
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="UserInfo" component={UserInfoScreen} />
             <Stack.Screen name="BMIScreen" component={BMIScreen} />
+            <Stack.Screen name="Selection" component={SelectionScreen} />
+            <Stack.Screen name="HouseSelection" component={HouseSelectionScreen} />
+            <Stack.Screen name="Chat" component={Chat} />
+            <Stack.Screen name="ExerciseLevel" component={ExerciseLevelScreen} />
           </>
         ) : (
           <>
@@ -59,10 +65,7 @@ export default function App() {
             <Stack.Screen name="SignUp" component={SignUpScreen} />
           </>
         )}
-        <Stack.Screen name="Selection" component={SelectionScreen} />
         <Stack.Screen name="Loading" component={LoadingScreen} />
-        <Stack.Screen name="HouseSelection" component={HouseSelectionScreen} />
-        <Stack.Screen name="Chat" component={Chat} />
       </Stack.Navigator>
     </NavigationContainer>
   );
