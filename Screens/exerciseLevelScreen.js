@@ -10,11 +10,11 @@ const levels = [
 
 const ExerciseLevelScreen = ({ navigation, route }) => {
   const [selectedLevel, setSelectedLevel] = useState(null);
-  const { name, height, weight, bmi } = route.params;
+  const { name, height, weight, bmi ,email } = route.params;
 
   const handleNext = () => {
     if (selectedLevel) {
-      navigation.navigate('BMIScreen', { name, height, weight, bmi, exerciseLevel: selectedLevel });
+      navigation.navigate('BMIScreen', { name,email, height, weight, bmi, exerciseLevel: selectedLevel });
     }
   };
 

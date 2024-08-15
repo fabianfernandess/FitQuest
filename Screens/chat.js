@@ -3,11 +3,18 @@ import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Image 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_API_KEY } from '@env';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { ref, set, get } from 'firebase/database';
+import { db } from '../firebaseConfig';
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
+// Function to encode the email for Firebase path
+const encodeEmail = (email) => {
+  return email.replace(/\./g, ',').replace(/@/g, '_at_');
+};
+
 const Chat = ({ route }) => {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(route.params?.chatHistory || []);
   const [input, setInput] = useState('');
   const [initialized, setInitialized] = useState(false);
   const [model, setModel] = useState(null);
@@ -19,6 +26,7 @@ const Chat = ({ route }) => {
   const userInfo = route.params?.userInfo || {};
   const {
     name = "User",
+    email = "dummy@outlook.com", // Default email for example purposes
     height = 0,
     weight = 0,
     bmi = 0,
@@ -26,6 +34,8 @@ const Chat = ({ route }) => {
     house = "unknown",
     selectedOptions = []
   } = userInfo;
+
+  const encodedEmail = encodeEmail(email); // Encode the email for Firebase path
 
   useEffect(() => {
     const initializeChat = async () => {
@@ -71,9 +81,10 @@ const Chat = ({ route }) => {
             - Interactive Elements: Incorporate fun elements like virtual challenges, progress tracking, and real-time feedback. Regularly notify users of their points and progress with motivational messages and emojis to keep the experience engaging.
 
             Task:
-            Begin each interaction with a friendly greeting and introduction. Design a comprehensive week-long training program reflecting your house’s ethos. Include daily workouts, motivational messages, and tailored nutrition tips, but deliver the information in small, manageable chunks. After workouts, prompt the user to verify their meals, track calorie intake, and remind them of the points they’ve earned. Ensure every interaction is engaging, fun, and keeps the user motivated towards achieving their fitness goals.
+            Begin each interaction with a friendly greeting and introduction. Design a comprehensive week-long training program reflecting your house’s ethos. Include daily workouts, motivational messages, and tailored nutrition tips, but deliver the information in small, manageable chunks. After workouts, prompt the user to verify their meals, track calorie intake, and remind them of the points they’ve earned. Ensure every interaction is engaging, fun, and keeps the user motivated towards achieving their fitness goals.Give Exercises and tasks one by one, not all together! 
 
             `;
+
 
         const initializedModel = genAI.getGenerativeModel({
           model: 'gemini-1.5-pro',
@@ -82,13 +93,15 @@ const Chat = ({ route }) => {
 
         setModel(initializedModel);
 
-        const prompt = `Hello ${name}, welcome to the House of ${house}! Based on your BMI of ${bmi}, activity level (${exerciseLevel}), and your selected goals (${selectedOptions.join(', ')}), I have tailored a fitness plan for you. Let's get started!`;
+        if (messages.length === 0) {
+          const prompt = `Hello ${name}, welcome to the House of ${house}! Based on your BMI of ${bmi}, activity level (${exerciseLevel}), and your selected goals (${selectedOptions.join(', ')}), I have tailored a fitness plan for you. Let's get started!`;
 
-        const result = await initializedModel.generateContent(prompt);
-        const response = await result.response;
-        const botMessage = response.text();
+          const result = await initializedModel.generateContent(prompt);
+          const response = await result.response;
+          const botMessage = response.text();
 
-        setMessages([{ id: 1, text: botMessage, sender: 'trainer' }]);
+          setMessages([{ id: 1, text: botMessage, sender: 'trainer' }]);
+        }
         setInitialized(true);
       } catch (error) {
         console.error('Error initializing chat:', error);
@@ -112,6 +125,9 @@ const Chat = ({ route }) => {
 
         const newMessage = { id: messages.length + 1, text: 'Image captured', imageUri: data.uri, sender: 'user' };
         setMessages([...messages, newMessage]);
+
+        // Save message to Firebase
+        await set(ref(db, `chats/${encodedEmail}`), updatedMessages);
       } else {
         console.error("Camera reference is not available");
       }
@@ -123,7 +139,8 @@ const Chat = ({ route }) => {
   const sendMessage = async () => {
     if (input.trim()) {
       const newMessage = { id: messages.length + 1, text: input, sender: 'user' };
-      setMessages([...messages, newMessage]);
+      const updatedMessages = [...messages, newMessage];
+      setMessages(updatedMessages);
       setInput('');
 
       try {
@@ -133,10 +150,12 @@ const Chat = ({ route }) => {
           const response = await result.response;
           const botMessage = response.text();
 
-          setMessages(prevMessages => [
-            ...prevMessages,
-            { id: prevMessages.length + 1, text: botMessage, sender: 'trainer' }
-          ]);
+          const botResponse = { id: messages.length + 2, text: botMessage, sender: 'trainer' };
+          const finalMessages = [...updatedMessages, botResponse];
+          setMessages(finalMessages);
+
+          // Save chat to Firebase with encoded email
+          await set(ref(db, `chats/${encodedEmail}`), finalMessages);
         } else {
           console.error('Model is not initialized');
         }
@@ -309,6 +328,7 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 10,
   },
+  // other styles remain the same...
 });
 
 export default Chat;

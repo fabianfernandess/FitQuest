@@ -3,10 +3,10 @@ import React from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 
 const BMIScreen = ({ route, navigation }) => {
-  const { name, height, weight, bmi, exerciseLevel } = route.params;
+  const { name,email, height, weight, bmi, exerciseLevel } = route.params;
 
   const handleNext = () => {
-    navigation.navigate('Selection', { name, height, weight, bmi, exerciseLevel });
+    navigation.navigate('Selection', { name,email, height, weight, bmi, exerciseLevel });
   };
 
   return (

@@ -1,18 +1,20 @@
-// userInfoScreen.js
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 
-const UserInfoScreen = ({ navigation }) => {
+const UserInfoScreen = ({ route, navigation }) => {
   const [name, setName] = useState('');
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [exerciseLevel, setExerciseLevel] = useState('');
 
+  // Extract email from route params
+  const { email } = route.params;
+
   const handleNext = () => {
     const bmi = (weight / ((height / 100) ** 2)).toFixed(2);
-    navigation.navigate('ExerciseLevel', { name, height, weight, bmi });
+    // Pass name, height, weight, bmi, and email to the next screen
+    navigation.navigate('ExerciseLevel', { name, height, weight, bmi, email });
   };
-  
 
   return (
     <View style={styles.container}>

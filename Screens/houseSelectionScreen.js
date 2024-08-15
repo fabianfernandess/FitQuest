@@ -26,7 +26,7 @@ const houses = [
 
 const HouseSelectionScreen = ({ route, navigation }) => {
   // Extract all the parameters from the route
-  const { name, height, weight, bmi, exerciseLevel, selectedOptions } = route.params;
+  const { name,email, height, weight, bmi, exerciseLevel, selectedOptions } = route.params;
   
   const auth = getAuth();
   const db = getDatabase();
@@ -48,6 +48,7 @@ const HouseSelectionScreen = ({ route, navigation }) => {
     
     const userInfo = {
       name,
+      email,
       height,
       weight,
       bmi,

@@ -2,22 +2,39 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { db } from '../firebaseConfig'; // Assuming you're using Realtime Database
+import { ref, get } from 'firebase/database'; // For Realtime Database
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     const auth = getAuth();
-    signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        // Signed in
-        const user = userCredential.user;
-        console.log('Logged in with:', user.email);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Retrieve user data from Firebase
+      const userRef = ref(db, 'users/' + user.uid);
+      const snapshot = await get(userRef);
+
+      if (snapshot.exists()) {
+        const userData = snapshot.val();
+
+        // Retrieve chat history
+        const chatRef = ref(db, `chats/${user.email}`);
+        const chatSnapshot = await get(chatRef);
+        const chatHistory = chatSnapshot.exists() ? chatSnapshot.val() : [];
+
+        // Navigate to the Chat screen with user data and chat history
+        navigation.navigate('Chat', { userInfo: userData, chatHistory });
+      } else {
+        console.error('No user data found');
+      }
+    } catch (error) {
+      console.error('Error logging in:', error);
+    }
   };
 
   return (
