@@ -217,93 +217,96 @@ const Chat = ({ route }) => {
 
   if (cameraVisible) {
     return (
-      <View style={styles.cameraContainer}>
-        <CameraView
-          style={styles.cameraPreview}
-          ref={cameraRef}
-          onCameraReady={() => console.log('Camera ready')}
-        >
-          <View style={styles.captureButtonContainer}>
-            <TouchableOpacity onPress={takePicture} style={styles.captureButton}>
-              <Text style={styles.captureButtonText}>SNAP</Text>
-            </TouchableOpacity>
-          </View>
-        </CameraView>
-      </View>
-    );
-  }
-
-
-    return (
-      <ImageBackground 
-        source={require('../assets/gradientBG.png')} // Replace with your background image path
-        style={styles.backgroundImage}
-      >
-        <View style={styles.topNavContainer}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Image source={require('../assets/back-icon.png')} style={styles.backIcon} />
-          </TouchableOpacity>
-          <View style={styles.titleContainer}>
-            {/* <Text style={styles.titleText}>Chat</Text> */}
-          </View>
-          <View style={styles.pointsContainer}>
-            <Image source={require('../assets/points-icon.png')} style={styles.pointsIcon} />
-            <Text style={styles.pointsText}>10</Text>
-          </View>
+        <View style={styles.cameraContainer}>
+            <CameraView
+                style={styles.cameraPreview}
+                ref={cameraRef}
+                onCameraReady={() => console.log('Camera ready')}
+            >
+                <View style={styles.captureButtonContainer}>
+                    <TouchableOpacity onPress={takePicture} style={styles.captureButton}>
+                        <Text style={styles.captureButtonText}>SNAP</Text>
+                    </TouchableOpacity>
+                </View>
+            </CameraView>
         </View>
-  
-        <KeyboardAvoidingView
-          style={styles.container}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={90} // Adjust based on your header height
-        >
-          <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
-            {messages.map(message => (
-              <View key={message.id} style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}>
-                <Image
-                  source={message.sender === 'trainer' ? require('../assets/trainer.png') : require('../assets/user.png')}
-                  style={styles.profilePic}
-                />
-                {message.type === 'video' ? (
-                  <Video
-                    source={message.videoUrl}
-                    style={styles.video}
-                    useNativeControls
-                    resizeMode="contain"
-                    shouldPlay={true}   // This will start the video automatically
-                    isLooping={false}   // Set to true if you want the video to loop
-                  />
-                ) : message.imageUri ? (
-                  <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
-                ) : (
-                  <View style={message.sender === 'trainer' ? styles.trainerBubble : styles.userBubble}>
-                    <Text style={message.sender === 'trainer' ? styles.trainerText : styles.userText}>
-                      {message.text}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            ))}
-          </ScrollView>
-  
-          <View style={styles.inputContainer}>
-            <TouchableOpacity onPress={() => setCameraVisible(true)} style={styles.cameraButton}>
-              <Image source={require('../assets/camera.png')} style={styles.cameraIcon} />
-            </TouchableOpacity>
-            <TextInput
-              style={styles.input}
-              value={input}
-              onChangeText={setInput}
-              placeholder="Type your questions..."
-              placeholderTextColor="#888"
-            />
-            <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
-              <Image source={require('../assets/send.png')} style={styles.sendIcon} />
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-      </ImageBackground>
     );
+}
+
+return (
+
+        <ImageBackground 
+            source={require('../assets/gradientBG.png')} 
+            style={styles.backgroundImage}
+        >
+            {/* Top Navigation */}
+            <View style={styles.topNavContainer}>
+                <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                    <Image source={require('../assets/back-icon.png')} style={styles.backIcon} />
+                </TouchableOpacity>
+                <View style={styles.titleContainer}>
+                    {/* <Text style={styles.titleText}>Chat</Text> */}
+                </View>
+                <View style={styles.pointsContainer}>
+                    <Image source={require('../assets/points-icon.png')} style={styles.pointsIcon} />
+                    <Text style={styles.pointsText}>10</Text>
+                </View>
+            </View>
+
+            {/* Main Chat Content */}
+            <View style={styles.container}>
+                <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
+                    {messages.map(message => (
+                        <View key={message.id} style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}>
+                            <Image
+                                source={message.sender === 'trainer' ? require('../assets/trainer.png') : require('../assets/user.png')}
+                                style={styles.profilePic}
+                            />
+                            {message.type === 'video' ? (
+                                <Video
+                                    source={message.videoUrl}
+                                    style={styles.video}
+                                    useNativeControls
+                                    resizeMode="contain"
+                                    shouldPlay={true}   // This will start the video automatically
+                                    isLooping={false}   // Set to true if you want the video to loop
+                                />
+                            ) : message.imageUri ? (
+                                <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
+                            ) : (
+                                <View style={message.sender === 'trainer' ? styles.trainerBubble : styles.userBubble}>
+                                    <Text style={message.sender === 'trainer' ? styles.trainerText : styles.userText}>
+                                        {message.text}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                    ))}
+                </ScrollView>
+
+                {/* Input Container */}
+                <View style={styles.inputContainer}>
+                    <TouchableOpacity onPress={() => setCameraVisible(true)} style={styles.cameraButton}>
+                        <Image source={require('../assets/camera.png')} style={styles.cameraIcon} />
+                    </TouchableOpacity>
+                    <TextInput
+                        style={styles.input}
+                        value={input}
+                        onChangeText={setInput}
+                        placeholder="Type your questions..."
+                        placeholderTextColor="#888"
+                    />
+                    <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
+                        <Image source={require('../assets/send.png')} style={styles.sendIcon} />
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </ImageBackground>
+
+);
+
+
+   
   };
 
 const styles = StyleSheet.create({
@@ -314,7 +317,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-    paddingTop:30,
+    paddingTop: 30,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   messagesContainer: {
@@ -342,115 +345,133 @@ const styles = StyleSheet.create({
   trainerBubble: {
     padding: 15,
     maxWidth: '85%',
-    borderRadius: '10%',
+    borderRadius: 10,  // Adjusted to standard percentage
     backgroundColor: 'rgba(255, 255, 255, 0.08)'
   },
   userBubble: {
-    backgroundColor: '#1ccf6e', // Green bubble color for user
+    backgroundColor: '#1ccf6e',
     padding: 10,
-    borderRadius: '10%',
+    borderRadius: 10,  // Adjusted to standard percentage
     maxWidth: '80%',
     marginRight: 10,
   },
   trainerText: {
-    color: '#fff', // White text for trainer
+    color: '#fff',
   },
   userText: {
-    color: '#fff', // White text for user
+    color: '#fff',
   },
   video: {
-    width: 320, /* 90% of 390px screen width */
-    height: 213,/* Adjusted to maintain aspect ratio */
-    borderRadius: "20%",
-    // marginTop: 20,
+    width: 320,
+    height: 213,
+    borderRadius: 10, // Use percentage or fixed value
   },
   capturedImage: {
     width: 250,
     height: 150,
     borderRadius: 10,
   },
-  
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft:10,
-    paddingRight:5,
-    paddingVertical:5,
-    backgroundColor: 'rgba(36, 40, 47, 0.6)', // Dark background for the input field
-    borderRadius: '10%', // Rounded corners
+    paddingLeft: 10,
+    paddingRight: 5,
+    paddingVertical: 5,
+    backgroundColor: 'rgba(36, 40, 47, 0.6)',
+    borderRadius: 10,
     marginHorizontal: 5,
-    marginBottom: 20, // Add some margin at the bottom
+    marginBottom: 20,
   },
   cameraButton: {
     marginHorizontal: 5,
-    marginVertical:5,
+    marginVertical: 5,
   },
   cameraIcon: {
-    width: 24, // Adjust icon size to fit within the input container
+    width: 24,
     height: 24,
   },
   input: {
     flex: 1,
     padding: 10,
-    borderRadius: 20, // Rounded corners for the input field
-    color: '#fff', // White text color
+    borderRadius: 20,
+    color: '#fff',
   },
   sendButton: {
-    backgroundColor: '#34c759', // Green color for the send button
+    backgroundColor: '#34c759',
     padding: 10,
-    borderRadius:10, // Rounded button shape
-    marginLeft: 10, // Space between input and send button
+    borderRadius: 10,
+    marginLeft: 10,
   },
   sendButtonText: {
-    color: '#fff', // White text for the send button
-    fontSize: 18, // Larger font size for the send icon
+    color: '#fff',
+    fontSize: 18,
   },
   topNavContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop:0,
-    paddingTop:65,
+    paddingTop: 65,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    paddingVertical: 10, // Vertical padding for spacing
-    paddingHorizontal: 15, // Horizontal padding for spacing
-    // borderBottomWidth: 1,
-    // borderBottomColor: '#333', // Subtle bottom border color
+    paddingVertical: 10,
+    paddingHorizontal: 15,
   },
   backButton: {
-    padding: 10, // Space around the back button
+    padding: 10,
   },
   backIcon: {
     width: 28,
     height: 28,
-    tintColor: '#fff', // White color for the icon
+    tintColor: '#fff',
   },
   titleContainer: {
     flex: 1,
-    alignItems: 'center', // Center the title text
-  },
-  titleText: {
-    color: '#fff', // White text color
-    fontSize: 18,
-    fontWeight: '600', // Slightly bolder text
+    alignItems: 'center',
   },
   pointsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 16,
-    backgroundColor: '#353E3A'
+    backgroundColor: '#353E3A',
   },
   pointsIcon: {
     width: 28,
     height: 28,
     marginRight: 5,
-    // tintColor: '#fff', // White color for the points icon
   },
   pointsText: {
-    color: '#fff', // White text color
+    color: '#fff',
     fontSize: 16,
-    marginRight:10,
+    marginRight: 10,
   },
+  cameraContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'black',
+  },
+  cameraPreview: {
+    flex: 1,
+    justifyContent: 'flex-end', // This ensures that the button is at the bottom
+    width: '100%',
+    height: '100%',
+  },
+  captureButtonContainer: {
+    flex: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingBottom: 30, // Add some padding to bring the button above the very bottom edge
+  },
+  captureButton: {
+    backgroundColor: '#fff',
+    borderRadius: 5,
+    padding: 15,
+    paddingHorizontal: 20,
+  },
+  captureButtonText: {
+    fontSize: 14,
+    color: '#000',
+  }
 });
+
 
 export default Chat;
