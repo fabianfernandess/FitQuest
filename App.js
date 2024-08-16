@@ -56,7 +56,7 @@ export default function App() {
             <Stack.Screen name="BMIScreen" component={BMIScreen} />
             <Stack.Screen name="Selection" component={SelectionScreen} />
             <Stack.Screen name="HouseSelection" component={HouseSelectionScreen} />
-            <Stack.Screen name="Chat" component={Chat} />
+            <Stack.Screen name="Chat" component={Chat} options={{ headerShown: false }}/>
             <Stack.Screen name="ExerciseLevel" component={ExerciseLevelScreen} />
           </>
         ) : (
@@ -65,7 +65,7 @@ export default function App() {
             <Stack.Screen name="SignUp" component={SignUpScreen} />
           </>
         )}
-        <Stack.Screen name="Loading" component={LoadingScreen} />
+        <Stack.Screen name="Loading" component={LoadingScreen}  />
       </Stack.Navigator>
     </NavigationContainer>
   );

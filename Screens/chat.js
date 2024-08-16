@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Image,ImageBackground } from 'react-native';
+import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Image,ImageBackground,KeyboardAvoidingView } from 'react-native';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_API_KEY } from '@env';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -233,58 +233,78 @@ const Chat = ({ route }) => {
     );
   }
 
-  return (
-    <ImageBackground 
-      source={require('../assets/gradientBG.png')} // Replace with your background image path
-      style={styles.backgroundImage}
-    >
-      <View style={styles.container}>
-        <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
-          {messages.map(message => (
-            <View key={message.id} style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}>
-              <Image
-                source={message.sender === 'trainer' ? require('../assets/trainer.png') : require('../assets/user.png')}
-                style={styles.profilePic}
-              />
-              {message.type === 'video' ? (
-                <Video
-                  source={message.videoUrl}
-                  style={styles.video}
-                  useNativeControls
-                  resizeMode="contain"
-                  shouldPlay
-                />
-              ) : message.imageUri ? (
-                <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
-              ) : (
-                <View style={message.sender === 'trainer' ? styles.trainerBubble : styles.userBubble}>
-                  <Text style={message.sender === 'trainer' ? styles.trainerText : styles.userText}>
-                    {message.text}
-                  </Text>
-                </View>
-              )}
-            </View>
-          ))}
-        </ScrollView>
-        <View style={styles.inputContainer}>
-          <TouchableOpacity onPress={() => setCameraVisible(true)} style={styles.cameraButton}>
-            <Image source={require('../assets/camera.png')} style={styles.cameraIcon} />
+
+    return (
+      <ImageBackground 
+        source={require('../assets/gradientBG.png')} // Replace with your background image path
+        style={styles.backgroundImage}
+      >
+        <View style={styles.topNavContainer}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Image source={require('../assets/back-icon.png')} style={styles.backIcon} />
           </TouchableOpacity>
-          <TextInput
-            style={styles.input}
-            value={input}
-            onChangeText={setInput}
-            placeholder="Type your questions..."
-            placeholderTextColor="#888"
-          />
-          <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
-            <Image source={require('../assets/send.png')} style={styles.sendIcon} />
-          </TouchableOpacity>
+          <View style={styles.titleContainer}>
+            {/* <Text style={styles.titleText}>Chat</Text> */}
+          </View>
+          <View style={styles.pointsContainer}>
+            <Image source={require('../assets/points-icon.png')} style={styles.pointsIcon} />
+            <Text style={styles.pointsText}>10</Text>
+          </View>
         </View>
-      </View>
-    </ImageBackground>
-  );
-};
+  
+        <KeyboardAvoidingView
+          style={styles.container}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={90} // Adjust based on your header height
+        >
+          <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
+            {messages.map(message => (
+              <View key={message.id} style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}>
+                <Image
+                  source={message.sender === 'trainer' ? require('../assets/trainer.png') : require('../assets/user.png')}
+                  style={styles.profilePic}
+                />
+                {message.type === 'video' ? (
+                  <Video
+                    source={message.videoUrl}
+                    style={styles.video}
+                    useNativeControls
+                    resizeMode="contain"
+                    shouldPlay={true}   // This will start the video automatically
+                    isLooping={false}   // Set to true if you want the video to loop
+                  />
+                ) : message.imageUri ? (
+                  <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
+                ) : (
+                  <View style={message.sender === 'trainer' ? styles.trainerBubble : styles.userBubble}>
+                    <Text style={message.sender === 'trainer' ? styles.trainerText : styles.userText}>
+                      {message.text}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            ))}
+          </ScrollView>
+  
+          <View style={styles.inputContainer}>
+            <TouchableOpacity onPress={() => setCameraVisible(true)} style={styles.cameraButton}>
+              <Image source={require('../assets/camera.png')} style={styles.cameraIcon} />
+            </TouchableOpacity>
+            <TextInput
+              style={styles.input}
+              value={input}
+              onChangeText={setInput}
+              placeholder="Type your questions..."
+              placeholderTextColor="#888"
+            />
+            <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
+              <Image source={require('../assets/send.png')} style={styles.sendIcon} />
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </ImageBackground>
+    );
+  };
 
 const styles = StyleSheet.create({
   backgroundImage: {
@@ -294,7 +314,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent overlay
+    paddingTop:30,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   messagesContainer: {
     flex: 1,
@@ -313,8 +334,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   profilePic: {
-    width: 40,
-    height: 40,
+    width: 30,
+    height: 30,
     borderRadius: 20,
     marginRight: 10,
   },
@@ -338,46 +359,97 @@ const styles = StyleSheet.create({
     color: '#fff', // White text for user
   },
   video: {
-    width: 250,
-    height: 150,
-    borderRadius: "10%",
-    marginTop: 20,
+    width: 320, /* 90% of 390px screen width */
+    height: 213,/* Adjusted to maintain aspect ratio */
+    borderRadius: "20%",
+    // marginTop: 20,
   },
   capturedImage: {
     width: 250,
     height: 150,
     borderRadius: 10,
   },
+  
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
-    backgroundColor: '#111', // Dark background for input container
-    borderRadius: 30,
-    margin: 10,
+    paddingLeft:10,
+    paddingRight:5,
+    paddingVertical:5,
+    backgroundColor: 'rgba(36, 40, 47, 0.6)', // Dark background for the input field
+    borderRadius: '10%', // Rounded corners
+    marginHorizontal: 5,
+    marginBottom: 20, // Add some margin at the bottom
   },
   cameraButton: {
-    marginRight: 10,
+    marginHorizontal: 5,
+    marginVertical:5,
   },
   cameraIcon: {
-    width: 24,
+    width: 24, // Adjust icon size to fit within the input container
     height: 24,
-    tintColor: '#fff', // White camera icon
   },
   input: {
     flex: 1,
-    backgroundColor: '#333', // Darker input background
-    color: '#fff', // White input text
     padding: 10,
-    borderRadius: 20,
+    borderRadius: 20, // Rounded corners for the input field
+    color: '#fff', // White text color
   },
   sendButton: {
-    marginLeft: 10,
+    backgroundColor: '#34c759', // Green color for the send button
+    padding: 10,
+    borderRadius:10, // Rounded button shape
+    marginLeft: 10, // Space between input and send button
   },
-  sendIcon: {
-    width: 24,
-    height: 24,
-    tintColor: '#1ccf6e', // Green send icon color
+  sendButtonText: {
+    color: '#fff', // White text for the send button
+    fontSize: 18, // Larger font size for the send icon
+  },
+  topNavContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop:0,
+    paddingTop:65,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    paddingVertical: 10, // Vertical padding for spacing
+    paddingHorizontal: 15, // Horizontal padding for spacing
+    // borderBottomWidth: 1,
+    // borderBottomColor: '#333', // Subtle bottom border color
+  },
+  backButton: {
+    padding: 10, // Space around the back button
+  },
+  backIcon: {
+    width: 28,
+    height: 28,
+    tintColor: '#fff', // White color for the icon
+  },
+  titleContainer: {
+    flex: 1,
+    alignItems: 'center', // Center the title text
+  },
+  titleText: {
+    color: '#fff', // White text color
+    fontSize: 18,
+    fontWeight: '600', // Slightly bolder text
+  },
+  pointsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    backgroundColor: '#353E3A'
+  },
+  pointsIcon: {
+    width: 28,
+    height: 28,
+    marginRight: 5,
+    // tintColor: '#fff', // White color for the points icon
+  },
+  pointsText: {
+    color: '#fff', // White text color
+    fontSize: 16,
+    marginRight:10,
   },
 });
 
