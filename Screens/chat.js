@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Image,ImageBackground } from 'react-native';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_API_KEY } from '@env';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -57,43 +57,59 @@ const Chat = ({ route }) => {
         }
 
         const systemInstruction = `
-          You are an advanced AI fitness trainer assigned to assist the user ${name}. 
-          ${name} belongs to the ${house}, and their fitness profile is as follows:
-          - BMI: ${bmi}
-          - Height: ${height} cm
-          - Weight: ${weight} kg
-          - Exercise Level: ${exerciseLevel}
-          - Fitness Goals: ${selectedOptions.join(', ')}
+        You are an advanced AI fitness trainer assigned to assist the user ${name}. 
+        ${name} belongs to the ${house}, and their fitness profile is as follows:
+        - BMI: ${bmi}
+        - Height: ${height} cm
+        - Weight: ${weight} kg
+        - Exercise Level: ${exerciseLevel}
+        - Fitness Goals: ${selectedOptions.join(', ')}
 
-          Your role is to embody the traits and training approach of the ${house} to provide personalized fitness coaching. Tailor your responses to match the user's fitness goals, offering guidance on exercises, nutrition, and motivation in short, engaging, and fun pieces. Use emojis and keep the tone light and motivational.
+        Your role is to embody the traits and training approach of the ${house} to provide personalized fitness coaching. Tailor your responses to match the user's fitness goals, offering guidance on exercises, nutrition, and motivation in short, engaging, and fun pieces. Use emojis and keep the tone light and motivational.
 
-          House of Valor:
-          AI Trainer Name: Maximus
-          Traits: Focuses on strength, resilience, and high-intensity training.
-          Training Approach: Maximus is assertive and challenges users with powerlifting and bodybuilding workouts. Keep responses direct, encouraging, and motivational.
+        **House Traits:**
+        1. **House of Valor**
+          - **Trainer:** Maximus
+          - **Traits:** Strength, resilience, and high-intensity training.
+          - **Approach:** Be direct, assertive, and highly motivational. Push ${name} to exceed their limits with strength-building exercises.
 
-          House of Elara:
-          AI Trainer Name: Serene
-          Traits: Emphasizes mental well-being, flexibility, and endurance.
-          Training Approach: Serene offers nurturing advice with yoga, meditation, and gentle fitness routines. Responses should be calming, supportive, and focused on balance.
+        2. **House of Elara**
+          - **Trainer:** Serene
+          - **Traits:** Flexibility, mental well-being, and endurance.
+          - **Approach:** Offer gentle encouragement with a focus on yoga, meditation, and balanced workouts. Keep the tone calm and supportive.
 
-          House of Nova:
-          AI Trainer Name: Lyra
-          Traits: Prioritizes innovation, agility, and cutting-edge fitness technology.
-          Training Approach: Lyra keeps things fresh and exciting with the latest fitness trends. Responses should be dynamic, tech-savvy, and inspiring.
+        3. **House of Nova**
+          - **Trainer:** Lyra
+          - **Traits:** Innovation, agility, and cutting-edge fitness technology.
+          - **Approach:** Keep things fresh, dynamic, and tech-savvy. Engage ${name} with innovative workouts and maintain an inspiring tone.
 
-          Additional Responsibilities:
-          - Workout Demos and Animations: Each workout session includes a demo or animation to provide clear, visual instructions, ensuring exercises are performed correctly and safely.
-          - Calorie Goals and Meal Verification: Set personalized daily calorie goals. After workouts, remind the user to verify their meal by capturing an image with their camera. Use image recognition to assess the meal’s nutritional content, giving immediate feedback. Meals that align with their goals are marked as 'verified' and earn them points.
-          - Points System: Encourage consistent engagement by awarding points for completing workouts, verifying meals, and meeting daily calorie goals. Points can be accumulated and redeemed for rewards such as badges, gift vouchers, or discounts on fitness gear. For example:
-            - Workout Completion: 💪 10 points per completed workout.
-            - Meal Verification: 🍎 5 points per verified healthy meal.
-            - Meeting Calorie Goals: 🎯 Additional points for maintaining within the calorie range.
-          - Interactive Elements: Incorporate fun elements like virtual challenges, progress tracking, and real-time feedback. Regularly notify users of their points and progress with motivational messages and emojis to keep the experience engaging.
+        **Responsibilities:**
+        1. **Step-by-Step Guidance:** 
+          - Start with exercises that have associated demo videos in the system. 
+          - Introduce one exercise at a time with a clear, concise instruction like, “Let's start with Jumping Jacks. Here's how to do it.”
+          - Immediately follow up with, “Here’s the demonstration,” and display the demo video right after the instruction.
+          - Ensure that the video is displayed right after the instruction, so ${name} can see how the exercise is performed.
+          - Wait for ${name} to confirm they’ve completed the exercise before moving on to the next step.
 
-          Task:
-          Begin each interaction with a friendly greeting and introduction. Design a comprehensive week-long training program reflecting your house’s ethos. Include daily workouts, motivational messages, and tailored nutrition tips, but deliver the information in small, manageable chunks. After workouts, prompt the user to verify their meals, track calorie intake, and remind them of the points they’ve earned. Ensure every interaction is engaging, fun, and keeps the user motivated towards achieving their fitness goals. Give exercises and tasks one by one, not all together!
-        `;
+        2. **Handling User Questions Related to Videos:**
+          - If ${name} asks questions related to an exercise right after a video has been shown, understand that the question is likely about the exercise demonstrated in the video.
+          - Provide further clarification, tips, or additional guidance on the specific exercise shown in the video, ensuring ${name} fully understands how to perform it correctly.
+
+        3. **Progress and Points System:**
+          - After each completed exercise, remind ${name} of the points they’ve earned and how it contributes to their overall goals. For example, "Great job! You've earned 10 points for completing that exercise!"
+
+        4. **Meal Verification:**
+          - After the workout, guide ${name} to verify their meal by snapping a photo. Provide immediate feedback on the nutritional content and its alignment with their fitness goals.
+          - Reward verified meals with additional points to encourage healthy eating habits.
+
+        5. **Motivational Engagement:**
+          - Keep the interaction lively with motivational messages, emojis, and regular updates on their progress.
+          - Tailor responses based on ${name}'s performance, keeping them focused and engaged.
+
+        **Task:**
+        - Start each session with a warm greeting. Introduce yourself, the house, and the first exercise, play the demo video immediately after, and confirm that ${name} has completed it before moving on to the next step. Maintain a friendly, motivating tone throughout, and use the points system to keep ${name} engaged and motivated. Ensure the conversation is short and to the point, with only one exercise or task discussed at a time.
+
+`;
 
         const initializedModel = genAI.getGenerativeModel({
           model: 'gemini-1.5-pro',
@@ -151,14 +167,14 @@ const Chat = ({ route }) => {
       const updatedMessages = [...messages, newMessage];
       setMessages(updatedMessages);
       setInput('');
-
+  
       try {
         if (model) {
           const prompt = messages.map(msg => msg.text).join('\n') + `\n${input}`;
           const result = await model.generateContent(prompt);
           const response = await result.response;
           const botMessage = response.text();
-
+  
           let videoUrl = null;
           for (let exercise in exerciseVideos) {
             if (botMessage.includes(exercise)) {
@@ -166,7 +182,7 @@ const Chat = ({ route }) => {
               break;
             }
           }
-
+  
           const botResponse = { 
             id: messages.length + 2, 
             text: botMessage, 
@@ -174,10 +190,10 @@ const Chat = ({ route }) => {
             type: videoUrl ? 'video' : 'text', 
             videoUrl: videoUrl 
           };
-
+  
           const finalMessages = [...updatedMessages, botResponse];
           setMessages(finalMessages);
-
+  
           // Save chat to Firebase with encoded email
           await set(ref(db, `chats/${encodedEmail}`), finalMessages);
         } else {
@@ -188,6 +204,8 @@ const Chat = ({ route }) => {
       }
     }
   };
+  
+
 
   if (!initialized) {
     return (
@@ -216,155 +234,150 @@ const Chat = ({ route }) => {
   }
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
-        {messages.map(message => (
-          <View key={message.id} style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}>
-            <Image
-              source={message.sender === 'trainer' ? require('../assets/trainer.png') : require('../assets/user.png')}
-              style={styles.profilePic}
-            />
-            {message.type === 'video' ? (
-              <Video
-                source={message.videoUrl}
-                style={styles.video}
-                useNativeControls
-                resizeMode="contain"
-                shouldPlay
+    <ImageBackground 
+      source={require('../assets/gradientBG.png')} // Replace with your background image path
+      style={styles.backgroundImage}
+    >
+      <View style={styles.container}>
+        <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
+          {messages.map(message => (
+            <View key={message.id} style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}>
+              <Image
+                source={message.sender === 'trainer' ? require('../assets/trainer.png') : require('../assets/user.png')}
+                style={styles.profilePic}
               />
-            ) : message.imageUri ? (
-              <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
-            ) : (
-              <Text style={styles.messageText}>{message.text}</Text>
-            )}
-          </View>
-        ))}
-      </ScrollView>
-      <View style={styles.inputContainer}>
-        <TouchableOpacity onPress={() => setCameraVisible(true)} style={styles.cameraButton}>
-          <Image source={require('../assets/camera.png')} style={styles.cameraIcon} />
-        </TouchableOpacity>
-        <TextInput
-          style={styles.input}
-          value={input}
-          onChangeText={setInput}
-          placeholder="Type your questions..."
-        />
-        <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
-          <Text style={styles.sendButtonText}>Send</Text>
-        </TouchableOpacity>
+              {message.type === 'video' ? (
+                <Video
+                  source={message.videoUrl}
+                  style={styles.video}
+                  useNativeControls
+                  resizeMode="contain"
+                  shouldPlay
+                />
+              ) : message.imageUri ? (
+                <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
+              ) : (
+                <View style={message.sender === 'trainer' ? styles.trainerBubble : styles.userBubble}>
+                  <Text style={message.sender === 'trainer' ? styles.trainerText : styles.userText}>
+                    {message.text}
+                  </Text>
+                </View>
+              )}
+            </View>
+          ))}
+        </ScrollView>
+        <View style={styles.inputContainer}>
+          <TouchableOpacity onPress={() => setCameraVisible(true)} style={styles.cameraButton}>
+            <Image source={require('../assets/camera.png')} style={styles.cameraIcon} />
+          </TouchableOpacity>
+          <TextInput
+            style={styles.input}
+            value={input}
+            onChangeText={setInput}
+            placeholder="Type your questions..."
+            placeholderTextColor="#888"
+          />
+          <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
+            <Image source={require('../assets/send.png')} style={styles.sendIcon} />
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+    resizeMode: 'cover',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#001F3F',
-  },
-  cameraContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cameraPreview: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignSelf: 'stretch',
-  },
-  captureButtonContainer: {
-    flex: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  captureButton: {
-    flex: 0,
-    backgroundColor: '#fff',
-    borderRadius: 5,
-    padding: 15,
-    paddingHorizontal: 20,
-    alignSelf: 'center',
-    margin: 20,
-  },
-  captureButtonText: {
-    fontSize: 14,
-    color: '#000',
+    padding: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent overlay
   },
   messagesContainer: {
     flex: 1,
   },
   messagesContent: {
-    padding: 10,
+    paddingBottom: 20,
   },
   trainerMessage: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
+    alignItems: 'flex-start',
+    marginBottom: 20,
   },
   userMessage: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    alignSelf: 'flex-end',
+    flexDirection: 'row-reverse',
+    alignItems: 'flex-start',
+    marginBottom: 20,
   },
   profilePic: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     marginRight: 10,
   },
-  messageText: {
-    backgroundColor: '#1f7a8c',
-    color: '#fff',
+  trainerBubble: {
+    padding: 15,
+    maxWidth: '85%',
+    borderRadius: '10%',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)'
+  },
+  userBubble: {
+    backgroundColor: '#1ccf6e', // Green bubble color for user
     padding: 10,
-    borderRadius: 10,
+    borderRadius: '10%',
     maxWidth: '80%',
+    marginRight: 10,
+  },
+  trainerText: {
+    color: '#fff', // White text for trainer
+  },
+  userText: {
+    color: '#fff', // White text for user
   },
   video: {
-    width: '100%',
-    height: 200,
+    width: 250,
+    height: 150,
+    borderRadius: "10%",
+    marginTop: 20,
+  },
+  capturedImage: {
+    width: 250,
+    height: 150,
     borderRadius: 10,
-    marginTop: 10,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 10,
-    backgroundColor: '#001F3F',
+    backgroundColor: '#111', // Dark background for input container
+    borderRadius: 30,
+    margin: 10,
   },
   cameraButton: {
     marginRight: 10,
   },
   cameraIcon: {
-    width: 30,
-    height: 30,
+    width: 24,
+    height: 24,
+    tintColor: '#fff', // White camera icon
   },
   input: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#333', // Darker input background
+    color: '#fff', // White input text
     padding: 10,
     borderRadius: 20,
-    marginRight: 10,
   },
   sendButton: {
-    backgroundColor: '#28A745',
-    padding: 10,
-    borderRadius: 20,
+    marginLeft: 10,
   },
-  sendButtonText: {
-    color: '#fff',
-  },
-  loadingText: {
-    color: '#fff',
-    fontSize: 20,
-    textAlign: 'center',
-    marginTop: 20,
-  },
-  capturedImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 10,
+  sendIcon: {
+    width: 24,
+    height: 24,
+    tintColor: '#1ccf6e', // Green send icon color
   },
 });
 
