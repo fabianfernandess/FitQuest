@@ -5,12 +5,23 @@ import { GEMINI_API_KEY } from '@env';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { ref, set, get } from 'firebase/database';
 import { db } from '../firebaseConfig';
+import { Video } from 'expo-av';
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 // Function to encode the email for Firebase path
 const encodeEmail = (email) => {
   return email.replace(/\./g, ',').replace(/@/g, '_at_');
+};
+
+// Mapping exercises to video files
+const exerciseVideos = {
+  "Bicycle Crunch": require('../assets/Animations/bicycleCrunch.mov'),
+  "Burpees": require('../assets/Animations/burpees.mov'),
+  "Push-Ups": require('../assets/Animations/pushups.mov'),
+  "Squats": require('../assets/Animations/squats.mov'),
+  "Star Jumps": require('../assets/Animations/starjumps.mov'),
+  "Jumping Jacks": require('../assets/Animations/jumpingJacks.mov')
 };
 
 const Chat = ({ route }) => {
@@ -46,45 +57,43 @@ const Chat = ({ route }) => {
         }
 
         const systemInstruction = `
-            You are an advanced AI fitness trainer assigned to assist the user ${name}. 
-            ${name} belongs to the ${house}, and their fitness profile is as follows:
-            - BMI: ${bmi}
-            - Height: ${height} cm
-            - Weight: ${weight} kg
-            - Exercise Level: ${exerciseLevel}
-            - Fitness Goals: ${selectedOptions.join(', ')}
+          You are an advanced AI fitness trainer assigned to assist the user ${name}. 
+          ${name} belongs to the ${house}, and their fitness profile is as follows:
+          - BMI: ${bmi}
+          - Height: ${height} cm
+          - Weight: ${weight} kg
+          - Exercise Level: ${exerciseLevel}
+          - Fitness Goals: ${selectedOptions.join(', ')}
 
-            Your role is to embody the traits and training approach of the ${house} to provide personalized fitness coaching. Tailor your responses to match the user's fitness goals, offering guidance on exercises, nutrition, and motivation in short, engaging, and fun pieces. Use emojis and keep the tone light and motivational.
+          Your role is to embody the traits and training approach of the ${house} to provide personalized fitness coaching. Tailor your responses to match the user's fitness goals, offering guidance on exercises, nutrition, and motivation in short, engaging, and fun pieces. Use emojis and keep the tone light and motivational.
 
-            House of Valor:
-            AI Trainer Name: Maximus
-            Traits: Focuses on strength, resilience, and high-intensity training.
-            Training Approach: Maximus is assertive and challenges users with powerlifting and bodybuilding workouts. Keep responses direct, encouraging, and motivational.
+          House of Valor:
+          AI Trainer Name: Maximus
+          Traits: Focuses on strength, resilience, and high-intensity training.
+          Training Approach: Maximus is assertive and challenges users with powerlifting and bodybuilding workouts. Keep responses direct, encouraging, and motivational.
 
-            House of Elara:
-            AI Trainer Name: Serene
-            Traits: Emphasizes mental well-being, flexibility, and endurance.
-            Training Approach: Serene offers nurturing advice with yoga, meditation, and gentle fitness routines. Responses should be calming, supportive, and focused on balance.
+          House of Elara:
+          AI Trainer Name: Serene
+          Traits: Emphasizes mental well-being, flexibility, and endurance.
+          Training Approach: Serene offers nurturing advice with yoga, meditation, and gentle fitness routines. Responses should be calming, supportive, and focused on balance.
 
-            House of Nova:
-            AI Trainer Name: Lyra
-            Traits: Prioritizes innovation, agility, and cutting-edge fitness technology.
-            Training Approach: Lyra keeps things fresh and exciting with the latest fitness trends. Responses should be dynamic, tech-savvy, and inspiring.
+          House of Nova:
+          AI Trainer Name: Lyra
+          Traits: Prioritizes innovation, agility, and cutting-edge fitness technology.
+          Training Approach: Lyra keeps things fresh and exciting with the latest fitness trends. Responses should be dynamic, tech-savvy, and inspiring.
 
-            Additional Responsibilities:
-            - Workout Demos and Animations: Each workout session includes a demo or animation to provide clear, visual instructions, ensuring exercises are performed correctly and safely.
-            - Calorie Goals and Meal Verification: Set personalized daily calorie goals. After workouts, remind the user to verify their meal by capturing an image with their camera. Use image recognition to assess the meal’s nutritional content, giving immediate feedback. Meals that align with their goals are marked as 'verified' and earn them points.
-            - Points System: Encourage consistent engagement by awarding points for completing workouts, verifying meals, and meeting daily calorie goals. Points can be accumulated and redeemed for rewards such as badges, gift vouchers, or discounts on fitness gear. For example:
-              - Workout Completion: 💪 10 points per completed workout.
-              - Meal Verification: 🍎 5 points per verified healthy meal.
-              - Meeting Calorie Goals: 🎯 Additional points for maintaining within the calorie range.
-            - Interactive Elements: Incorporate fun elements like virtual challenges, progress tracking, and real-time feedback. Regularly notify users of their points and progress with motivational messages and emojis to keep the experience engaging.
+          Additional Responsibilities:
+          - Workout Demos and Animations: Each workout session includes a demo or animation to provide clear, visual instructions, ensuring exercises are performed correctly and safely.
+          - Calorie Goals and Meal Verification: Set personalized daily calorie goals. After workouts, remind the user to verify their meal by capturing an image with their camera. Use image recognition to assess the meal’s nutritional content, giving immediate feedback. Meals that align with their goals are marked as 'verified' and earn them points.
+          - Points System: Encourage consistent engagement by awarding points for completing workouts, verifying meals, and meeting daily calorie goals. Points can be accumulated and redeemed for rewards such as badges, gift vouchers, or discounts on fitness gear. For example:
+            - Workout Completion: 💪 10 points per completed workout.
+            - Meal Verification: 🍎 5 points per verified healthy meal.
+            - Meeting Calorie Goals: 🎯 Additional points for maintaining within the calorie range.
+          - Interactive Elements: Incorporate fun elements like virtual challenges, progress tracking, and real-time feedback. Regularly notify users of their points and progress with motivational messages and emojis to keep the experience engaging.
 
-            Task:
-            Begin each interaction with a friendly greeting and introduction. Design a comprehensive week-long training program reflecting your house’s ethos. Include daily workouts, motivational messages, and tailored nutrition tips, but deliver the information in small, manageable chunks. After workouts, prompt the user to verify their meals, track calorie intake, and remind them of the points they’ve earned. Ensure every interaction is engaging, fun, and keeps the user motivated towards achieving their fitness goals.Give Exercises and tasks one by one, not all together! 
-
-            `;
-
+          Task:
+          Begin each interaction with a friendly greeting and introduction. Design a comprehensive week-long training program reflecting your house’s ethos. Include daily workouts, motivational messages, and tailored nutrition tips, but deliver the information in small, manageable chunks. After workouts, prompt the user to verify their meals, track calorie intake, and remind them of the points they’ve earned. Ensure every interaction is engaging, fun, and keeps the user motivated towards achieving their fitness goals. Give exercises and tasks one by one, not all together!
+        `;
 
         const initializedModel = genAI.getGenerativeModel({
           model: 'gemini-1.5-pro',
@@ -127,7 +136,7 @@ const Chat = ({ route }) => {
         setMessages([...messages, newMessage]);
 
         // Save message to Firebase
-        await set(ref(db, `chats/${encodedEmail}`), updatedMessages);
+        await set(ref(db, `chats/${encodedEmail}`), messages);
       } else {
         console.error("Camera reference is not available");
       }
@@ -150,7 +159,22 @@ const Chat = ({ route }) => {
           const response = await result.response;
           const botMessage = response.text();
 
-          const botResponse = { id: messages.length + 2, text: botMessage, sender: 'trainer' };
+          let videoUrl = null;
+          for (let exercise in exerciseVideos) {
+            if (botMessage.includes(exercise)) {
+              videoUrl = exerciseVideos[exercise];
+              break;
+            }
+          }
+
+          const botResponse = { 
+            id: messages.length + 2, 
+            text: botMessage, 
+            sender: 'trainer', 
+            type: videoUrl ? 'video' : 'text', 
+            videoUrl: videoUrl 
+          };
+
           const finalMessages = [...updatedMessages, botResponse];
           setMessages(finalMessages);
 
@@ -200,7 +224,15 @@ const Chat = ({ route }) => {
               source={message.sender === 'trainer' ? require('../assets/trainer.png') : require('../assets/user.png')}
               style={styles.profilePic}
             />
-            {message.imageUri ? (
+            {message.type === 'video' ? (
+              <Video
+                source={message.videoUrl}
+                style={styles.video}
+                useNativeControls
+                resizeMode="contain"
+                shouldPlay
+              />
+            ) : message.imageUri ? (
               <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
             ) : (
               <Text style={styles.messageText}>{message.text}</Text>
@@ -289,6 +321,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     maxWidth: '80%',
   },
+  video: {
+    width: '100%',
+    height: 200,
+    borderRadius: 10,
+    marginTop: 10,
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -328,7 +366,6 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 10,
   },
-  // other styles remain the same...
 });
 
 export default Chat;
