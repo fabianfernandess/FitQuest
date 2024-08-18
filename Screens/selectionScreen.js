@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, Dimensions } from 'react-native';
 
 const options = [
   { label: "Powerlifting", size: 120, house: "House of Valor" },
@@ -18,6 +18,8 @@ const options = [
   { label: "Agility Ladder", size: 110, house: "House of Nova" },
   { label: "Dynamic Stretching", size: 130, house: "House of Nova" },
 ];
+
+const { width } = Dimensions.get('window');
 
 const SelectionScreen = ({ route, navigation }) => {
   const { Name, email, height, weight, bmi, exerciseLevel } = route.params;
@@ -56,24 +58,25 @@ const SelectionScreen = ({ route, navigation }) => {
           <View style={[styles.step, styles.activeStep]} />
         </View>
 
-        <View style={styles.centeredContent}>
-          <Text style={styles.title}>Choose what describes you the most!</Text>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.optionsContainer}>
+        <Text style={styles.title}>Choose what describes you the most!</Text>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={styles.bubblesContainer}>
             {options.map((option, index) => (
               <TouchableOpacity
                 key={index}
                 style={[
                   styles.optionButton,
                   selectedOptions.includes(option.label) && styles.selectedOption,
-                  { width: option.size, height: option.size, marginLeft: (index % 2 === 0) ? 15 : 0, marginTop: (index % 3 === 0) ? 15 : 0 },
+                  { width: option.size, height: option.size },
                 ]}
                 onPress={() => toggleOption(option)}
               >
                 <Text style={styles.optionText}>{option.label}</Text>
               </TouchableOpacity>
             ))}
-          </ScrollView>
-        </View>
+          </View>
+        </ScrollView>
 
         <TouchableOpacity onPress={handleNext} style={styles.nextButton}>
           <Text style={styles.nextButtonText}>Next</Text>
@@ -91,16 +94,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: 30,
-  },
-  centeredContent: {
-    flex: 1,
-    justifyContent: 'center',
+    alignItems:'center',
+    paddingBottom: 35,
   },
   stepperContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginBottom: 48,
+    marginHorizontal:20,
+    marginTop:100,
+    marginHorizontal:30
   },
   step: {
     height: 3,
@@ -116,18 +119,23 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     color: '#fff',
-    marginBottom: 40,
+    marginBottom: 20,
     textAlign: 'center',
+    marginHorizontal:50,
+    
   },
-  optionsContainer: {
+  bubblesContainer: {
+    paddingVertical:50,
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
+    width: width * 2.5, // Adjust the width to control the wrapping (approx. 2.5 screen widths)
   },
   optionButton: {
     backgroundColor: 'rgba(103, 122, 132, 0.19)',
     borderRadius: 100,
-    marginHorizontal: 10,
+    marginHorizontal:5,
+    marginVertical: 5,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -143,15 +151,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
   },
   nextButton: {
+    backgroundColor: '#03C988',
     padding: 15,
-    backgroundColor: 'transparent',
-    borderColor: '#03C988',
-    borderWidth: 1,
     borderRadius: 10,
-    alignItems: 'center',
+    marginTop:20,
+    width:331,
+    marginTop: 30,
+    marginHorizontal:20,
   },
   nextButtonText: {
-    color: '#03C988',
+    color: '#fff',
+    textAlign: 'center',
     fontSize: 18,
   },
 });

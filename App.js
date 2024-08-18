@@ -6,7 +6,6 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { app } from './firebaseConfig';
 import Chat from './Screens/chat';
 import HouseSelectionScreen from './Screens/houseSelectionScreen';
-import LoadingScreen from './Screens/loadingScreen';
 import SelectionScreen from './Screens/selectionScreen';
 import LoginScreen from './Screens/loginScreen';
 import SignUpScreen from './Screens/signUpScreen';
@@ -100,7 +99,6 @@ export default function App() {
             <Stack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: false }} />
           </>
         )}
-        <Stack.Screen name="Loading" component={LoadingScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -113,22 +111,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 40, // Add margin below the logo to create space for the progress bar
   },
   logo: {
-    width: 303, 
-    height: 303, 
-    resizeMode: 'contain',
+    width: 245, 
+    height: 208, 
   },
   progressBarContainer: {
-    width: '80%',
-    height: 4,
+    width: 250,
+    height: 7,
     backgroundColor: 'rgba(255, 255, 255, 0.1)', // Semi-transparent background color
-    borderRadius: 2,
+    borderRadius: 5,
     overflow: 'hidden',
-    marginBottom: 300, // Adjust the margin for spacing from the bottom
   },
   progressBar: {
     height: '100%',

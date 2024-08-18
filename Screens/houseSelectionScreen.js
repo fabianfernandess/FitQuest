@@ -117,6 +117,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
+    paddingBottom:40
   },
   title: {
     fontSize: 24,
@@ -192,6 +193,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     marginTop:20,
+    width:331,
   },
   confirmButtonText: {
     color: '#fff',

@@ -14,6 +14,13 @@ const encodeEmail = (email) => {
   return email.replace(/\./g, ',').replace(/@/g, '_at_');
 };
 
+// Background images based on house
+const backgroundImages = {
+  Nova: require('../assets/novaBG.png'),
+  Valor: require('../assets/valorBG.png'),
+  Elara: require('../assets/elaraBG.png'),
+};
+
 // Mapping exercises to video files
 const exerciseVideos = {
   "Bicycle Crunch": require('../assets/Animations/bicycleCrunch.mov'),
@@ -47,6 +54,19 @@ const Chat = ({ route }) => {
   } = userInfo;
 
   const encodedEmail = encodeEmail(email); // Encode the email for Firebase path
+
+  const getBackgroundImage = () => {
+    switch (house) {
+      case 'House Nova':
+        return require('../assets/novaBG.png');
+      case 'House Valor':
+        return require('../assets/valorBG.png');
+      case 'House Elara':
+        return require('../assets/elaraBG.png');
+      default:
+        return require('../assets/splash.png'); // Fallback image
+    }
+  };
 
   useEffect(() => {
     const initializeChat = async () => {
@@ -232,9 +252,17 @@ const Chat = ({ route }) => {
 
   if (!initialized) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Loading...</Text>
+      <ImageBackground
+      source={getBackgroundImage()}
+      style={styles.Loading_backgroundImage}
+    >
+      <View style={styles.Loading_container}>
+        <Text style={styles.Loading_welcomeText}>Hi Andrew, welcome to {house}!{'\n'}I'm Lyra your trainer!</Text>
+        <TouchableOpacity style={styles.Loading_button} onPress={() => navigation.navigate('NextScreen')}>
+          <Text style={styles.Loading_buttonText}>Next</Text>
+        </TouchableOpacity>
       </View>
+    </ImageBackground>
     );
   }
 
@@ -365,7 +393,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   userBubble: {
-    backgroundColor: '#1ccf6e',
+    backgroundColor: '#03C988',
     padding: 10,
     borderRadius: 10,
     maxWidth: '80%',
@@ -413,7 +441,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   sendButton: {
-    backgroundColor: '#34c759',
+    backgroundColor: '#03C988',
     padding: 10,
     borderRadius: 10,
     marginLeft: 10,
@@ -487,6 +515,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#000',
   },
+
+Loading_backgroundImage: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      resizeMode: 'cover',
+    },
+    Loading_container: {
+      flex: 1,
+      justifyContent: 'flex-end',
+      alignItems: 'center',
+      paddingBottom: 40,
+    },
+    Loading_welcomeText: {
+      color: '#fff',
+      fontSize: 21,
+      textAlign: 'center',
+      marginBottom: 20,
+      marginHorizontal:50,
+    },
+    Loading_button: {
+      backgroundColor: '#03C988',
+      padding: 15,
+      borderRadius: 10,
+      marginTop:20,
+      width:331,
+    },
+    Loading_buttonText: {
+      color: '#fff',
+      textAlign: 'center',
+      fontSize: 18,
+    },
+
 });
 
 export default Chat;

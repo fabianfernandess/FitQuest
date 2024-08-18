@@ -72,6 +72,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     marginBottom: 48,
+    marginTop:70,
   },
   step: {
     height: 3,
@@ -87,12 +88,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     color: '#fff',
-    marginBottom: 60,
+    marginBottom: 30,
     textAlign: 'center',
   },
   levelButton: {
     backgroundColor: 'rgba(103, 122, 132, 0.19)',
-    padding: 15,
+    padding: 20,
     borderRadius: 10,
     marginBottom: 20,
   },
@@ -102,12 +103,13 @@ const styles = StyleSheet.create({
   },
   levelText: {
     fontSize: 18,
+    marginBottom:1,
     color: '#fff',
     marginBottom: 5,
   },
   descriptionText: {
     fontSize: 14,
-    color: '#ddd',
+    color: '#424548',
   },
   nextButton: {
     backgroundColor: '#03C988',
