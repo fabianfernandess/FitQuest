@@ -1,35 +1,22 @@
+// screens/ExerciseLevelScreen.js
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
 
-const options = [
-  { label: "Lose Weight", size: 120 },
-  { label: "Track Progress", size: 100 },
-  { label: "Flexible Plans", size: 150 },
-  { label: "Exercise at Home", size: 130 },
+const levels = [
+  { label: "Not Very Active", description: "Spend most of the day sitting (e.g., desk job, studying)." },
+  { label: "Lightly Active", description: "Spend a good part of the day on your feet (e.g., teacher, retail)." },
+  { label: "Active", description: "Spend a good part of the day doing some physical activity (e.g., food server, postal carrier)." },
+  { label: "Very Active", description: "Spend most of the day doing heavy physical activity (e.g., construction, athlete)." },
 ];
 
-const SelectionScreen = ({ route, navigation }) => {
-  const { name, email, height, weight, bmi, exerciseLevel } = route.params;
-  const [selectedOptions, setSelectedOptions] = useState([]);
-
-  const toggleOption = (option) => {
-    setSelectedOptions((prevSelected) =>
-      prevSelected.includes(option)
-        ? prevSelected.filter((item) => item !== option)
-        : [...prevSelected, option]
-    );
-  };
+const ExerciseLevelScreen = ({ navigation, route }) => {
+  const [selectedLevel, setSelectedLevel] = useState(null);
+  const { Name, height, weight, bmi, email } = route.params;
 
   const handleNext = () => {
-    navigation.navigate('HouseSelection', {
-      name,
-      email,
-      height,
-      weight,
-      bmi,
-      exerciseLevel,
-      selectedOptions,
-    });
+    if (selectedLevel) {
+      navigation.navigate('Selection', { Name, email, height, weight, bmi, exerciseLevel: selectedLevel });
+    }
   };
 
   return (
@@ -43,26 +30,22 @@ const SelectionScreen = ({ route, navigation }) => {
             <View style={[styles.step, styles.activeStep]} />
             <View style={[styles.step, styles.activeStep]} />
             <View style={[styles.step, styles.activeStep]} />
-            <View style={[styles.step, styles.activeStep]} />
+            <View style={[styles.step, styles.inactiveStep]} />
           </View>
 
-          <Text style={styles.title}>Choose what describes you the most!</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.optionsContainer}>
-            {options.map((option, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.optionButton,
-                  selectedOptions.includes(option.label) && styles.selectedOption,
-                  { width: option.size, height: option.size },
-                ]}
-                onPress={() => toggleOption(option.label)}
-              >
-                <Text style={styles.optionText}>{option.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          <Text style={styles.title}>How do you describe your activity level?</Text>
+          {levels.map((level, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[styles.levelButton, selectedLevel === level.label && styles.selectedButton]}
+              onPress={() => setSelectedLevel(level.label)}
+            >
+              <Text style={styles.levelText}>{level.label}</Text>
+              <Text style={styles.descriptionText}>{level.description}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
+        
         <TouchableOpacity onPress={handleNext} style={styles.nextButton}>
           <Text style={styles.nextButtonText}>Next</Text>
         </TouchableOpacity>
@@ -78,7 +61,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     padding: 30,
   },
   centeredContent: {
@@ -88,7 +71,7 @@ const styles = StyleSheet.create({
   stepperContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 48,
   },
   step: {
     height: 3,
@@ -104,42 +87,39 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     color: '#fff',
-    marginBottom: 40,
+    marginBottom: 60,
     textAlign: 'center',
   },
-  optionsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  optionButton: {
+  levelButton: {
     backgroundColor: 'rgba(103, 122, 132, 0.19)',
-    borderRadius: 100,
-    marginHorizontal: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
   },
-  selectedOption: {
-    backgroundColor: '#03C988',
+  selectedButton: {
+    borderColor: '#03C988',
+    borderWidth: 2,
   },
-  optionText: {
+  levelText: {
+    fontSize: 18,
     color: '#fff',
+    marginBottom: 5,
+  },
+  descriptionText: {
     fontSize: 14,
-    textAlign: 'center',
-    paddingHorizontal: 5,
+    color: '#ddd',
   },
   nextButton: {
+    backgroundColor: '#03C988',
     padding: 15,
-    backgroundColor: 'transparent',
-    borderColor: '#03C988',
-    borderWidth: 1,
     borderRadius: 10,
+    marginTop: 20,
     alignItems: 'center',
   },
   nextButtonText: {
-    color: '#03C988',
+    color: '#fff',
     fontSize: 18,
   },
 });
 
-export default SelectionScreen;
+export default ExerciseLevelScreen;

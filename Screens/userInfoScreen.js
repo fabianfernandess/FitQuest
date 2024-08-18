@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
 
 const UserInfoScreen = ({ route, navigation }) => {
+  const [Name, setName] = useState(''); // New state for full name
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
 
@@ -11,8 +12,8 @@ const UserInfoScreen = ({ route, navigation }) => {
 
   const handleNext = () => {
     const bmi = (weight / ((height / 100) ** 2)).toFixed(2);
-    // Pass height, weight, bmi, and email to the next screen
-    navigation.navigate('ExerciseLevel', { height, weight, bmi, email });
+    // Pass fullName, height, weight, bmi, and email to the next screen
+    navigation.navigate('ExerciseLevel', { Name, height, weight, bmi, email });
   };
 
   return (
@@ -30,6 +31,15 @@ const UserInfoScreen = ({ route, navigation }) => {
           </View>
 
           <Text style={styles.title}>Let's get to know you better</Text>
+
+          <Text style={styles.label}>Full Name</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Type your full name"
+            placeholderTextColor="#888"
+            value={Name}
+            onChangeText={setName}
+          />
 
           <Text style={styles.label}>What's your height?</Text>
           <TextInput

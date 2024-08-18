@@ -1,8 +1,7 @@
-// App.js
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { StyleSheet, Text, View, TouchableOpacity, StatusBar } from 'react-native';
+import { StyleSheet, View, ImageBackground, Animated, Image } from 'react-native';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { app } from './firebaseConfig';
 import Chat from './Screens/chat';
@@ -17,15 +16,51 @@ import ExerciseLevelScreen from './Screens/exerciseLevelScreen';
 
 const Stack = createNativeStackNavigator();
 
-const HomeScreen = ({ navigation }) => {
+// Splash screen component with background image, logo, and progress bar
+const SplashScreen = () => {
+  const progress = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: 3000, // 3 seconds
+      useNativeDriver: false,
+    }).start();
+  }, [progress]);
+
+  const progressInterpolate = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.homeText}>Hi! Welcome to our app.</Text>
-      <TouchableOpacity onPress={() => navigation.navigate('Selection')} style={styles.button}>
-        <Text style={styles.buttonText}>Start</Text>
-      </TouchableOpacity>
-      <StatusBar style="auto" />
-    </View>
+    <ImageBackground
+      source={require('./assets/loading.png')} // Update this to your background image path
+      style={styles.splashContainer}
+    >
+      <View style={styles.logoContainer}>
+        <Image source={require('./assets/logo.png')} style={styles.logo} /> 
+      </View>
+
+      <View style={styles.progressBarContainer}>
+        <Animated.View style={[styles.progressBar, { width: progressInterpolate }]} />
+      </View>
+    </ImageBackground>
+  );
+};
+
+// Home screen styled the same as the splash screen, without welcome text or button
+const HomeScreen = () => {
+  return (
+    <ImageBackground
+      source={require('./assets/loading.png')} // Use the same background image as splash
+      style={styles.splashContainer}
+    >
+      <View style={styles.logoContainer}>
+        <Image source={require('./assets/logo.png')} style={styles.logo} />
+      </View>
+      <View style={styles.progressBarContainer} />
+    </ImageBackground>
   );
 };
 
@@ -44,19 +79,19 @@ export default function App() {
     return subscriber;
   }, []);
 
-  if (initializing) return null;
+  if (initializing) return <SplashScreen />;
 
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Login">
         {user ? (
           <>
-            <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }}/>
-            <Stack.Screen name="UserInfo" component={UserInfoScreen} options={{ headerShown: false }}/>
-            <Stack.Screen name="BMIScreen" component={BMIScreen} options={{ headerShown: false }}/>
-            <Stack.Screen name="Selection" component={SelectionScreen} options={{ headerShown: false }}/>
+            <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="UserInfo" component={UserInfoScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="BMIScreen" component={BMIScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Selection" component={SelectionScreen} options={{ headerShown: false }} />
             <Stack.Screen name="HouseSelection" component={HouseSelectionScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Chat" component={Chat} options={{ headerShown: false }}/>
+            <Stack.Screen name="Chat" component={Chat} options={{ headerShown: false }} />
             <Stack.Screen name="ExerciseLevel" component={ExerciseLevelScreen} options={{ headerShown: false }} />
           </>
         ) : (
@@ -72,23 +107,32 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  splashContainer: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
   },
-  homeText: {
-    fontSize: 24,
-    marginBottom: 20,
+  logoContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  button: {
-    backgroundColor: '#28A745',
-    padding: 15,
-    borderRadius: 10,
+  logo: {
+    width: 303, 
+    height: 303, 
+    resizeMode: 'contain',
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
+  progressBarContainer: {
+    width: '80%',
+    height: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)', // Semi-transparent background color
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: 300, // Adjust the margin for spacing from the bottom
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.5)', // Light gray color for the progress bar
+    borderRadius: 4,
   },
 });

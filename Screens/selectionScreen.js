@@ -20,7 +20,7 @@ const options = [
 ];
 
 const SelectionScreen = ({ route, navigation }) => {
-  const { name, email, height, weight, bmi, exerciseLevel } = route.params;
+  const { Name, email, height, weight, bmi, exerciseLevel } = route.params;
   const [selectedOptions, setSelectedOptions] = useState([]);
 
   const toggleOption = (option) => {
@@ -33,7 +33,7 @@ const SelectionScreen = ({ route, navigation }) => {
 
   const handleNext = () => {
     navigation.navigate('HouseSelection', {
-      name,
+      Name,
       email,
       height,
       weight,

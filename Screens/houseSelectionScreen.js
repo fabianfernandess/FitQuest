@@ -27,7 +27,7 @@ const houses = [
 ];
 
 const HouseSelectionScreen = ({ route, navigation }) => {
-  const { name, email, height, weight, bmi, exerciseLevel, selectedOptions } = route.params;
+  const { Name, email, height, weight, bmi, exerciseLevel, selectedOptions } = route.params;
 
   const [selectedHouseIndex, setSelectedHouseIndex] = useState(0);
   const selectedHouse = houses[selectedHouseIndex];
@@ -40,16 +40,16 @@ const HouseSelectionScreen = ({ route, navigation }) => {
     const userRef = ref(db, `users/${userId}`);
 
     const userInfo = {
-      name,
-      email,
-      height,
-      weight,
-      bmi,
-      exerciseLevel,
-      house: selectedHouse.name,
-      selectedOptions,
+      name: Name || "",               // Default to an empty string if name is undefined
+      email: email || "",             // Default to an empty string if email is undefined
+      height: height || null,         // Default to null if height is undefined
+      weight: weight || null,         // Default to null if weight is undefined
+      bmi: bmi || null,               // Default to null if bmi is undefined
+      exerciseLevel: exerciseLevel || "", // Default to an empty string if exerciseLevel is undefined
+      house: selectedHouse.name || "",    // Default to an empty string if house name is undefined
+      selectedOptions: selectedOptions || [], // Default to an empty array if selectedOptions is undefined
     };
-
+  
     set(userRef, userInfo)
       .then(() => {
         navigation.navigate('Chat', { userInfo });
