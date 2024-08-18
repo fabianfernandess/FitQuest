@@ -51,21 +51,21 @@ export default function App() {
       <Stack.Navigator initialRouteName="Login">
         {user ? (
           <>
-            <Stack.Screen name="Home" component={HomeScreen} />
-            <Stack.Screen name="UserInfo" component={UserInfoScreen} />
-            <Stack.Screen name="BMIScreen" component={BMIScreen} />
-            <Stack.Screen name="Selection" component={SelectionScreen} />
-            <Stack.Screen name="HouseSelection" component={HouseSelectionScreen} />
+            <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }}/>
+            <Stack.Screen name="UserInfo" component={UserInfoScreen} options={{ headerShown: false }}/>
+            <Stack.Screen name="BMIScreen" component={BMIScreen} options={{ headerShown: false }}/>
+            <Stack.Screen name="Selection" component={SelectionScreen} options={{ headerShown: false }}/>
+            <Stack.Screen name="HouseSelection" component={HouseSelectionScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Chat" component={Chat} options={{ headerShown: false }}/>
-            <Stack.Screen name="ExerciseLevel" component={ExerciseLevelScreen} />
+            <Stack.Screen name="ExerciseLevel" component={ExerciseLevelScreen} options={{ headerShown: false }} />
           </>
         ) : (
           <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="SignUp" component={SignUpScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: false }} />
           </>
         )}
-        <Stack.Screen name="Loading" component={LoadingScreen}  />
+        <Stack.Screen name="Loading" component={LoadingScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

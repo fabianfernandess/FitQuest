@@ -1,5 +1,6 @@
+// screens/SignUpScreen.js
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { db } from '../firebaseConfig';
 import { ref, set } from 'firebase/database';
@@ -26,51 +27,134 @@ const SignUpScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Create an Account</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Name"
-        value={name}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <Button title="Sign Up" onPress={handleSignUp} />
-    </View>
+    <ImageBackground
+      source={require('../assets/signupBG.png')}
+      style={styles.backgroundImage}
+    >
+      <View style={styles.container}>
+        <View style={styles.centeredContent}>
+          <View style={styles.stepperContainer}>
+            <View style={[styles.step, styles.activeStep]} />
+            <View style={[styles.step, styles.inactiveStep]} />
+            <View style={[styles.step, styles.inactiveStep]} />
+            <View style={[styles.step, styles.inactiveStep]} />
+          </View>
+
+          <Text style={styles.title}>Let's create an account</Text>
+
+          <Text style={styles.label}>Name</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Type your first and last name"
+            placeholderTextColor="#888"
+            value={name}
+            onChangeText={setName}
+          />
+
+          <Text style={styles.label}>Email address</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Type your email"
+            placeholderTextColor="#888"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+          />
+
+          <Text style={styles.label}>Password</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Type your password"
+            placeholderTextColor="#888"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+
+          <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+            <Text style={styles.buttonText}>Sign up</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.bottomContainer}>
+          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.linkText}>Already have an account? Signin</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+    resizeMode: 'cover',
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    padding: 30,
+  },
+  centeredContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  stepperContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 68,
+  },
+  step: {
+    height: 3,
+    flex: 1,
+    marginHorizontal: 5,
+  },
+  activeStep: {
+    backgroundColor: '#fff',
+  },
+  inactiveStep: {
+    backgroundColor: 'background: rgba(255, 255, 255, 0.16);',
   },
   title: {
-    fontSize: 24,
-    marginBottom: 20,
+    fontSize: 28,
+    color: '#fff',
+    marginBottom: 60,
+    textAlign: 'center',
+  },
+  label: {
+    fontSize: 14,
+    color: '#fff',
+    marginBottom: 10,
   },
   input: {
-    width: '100%',
-    padding: 10,
-    marginVertical: 10,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
+    borderColor: '#333',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 40,
+    backgroundColor: 'rgba(36, 40, 47, 0.69)',
+    color: '#fff',
+  },
+  button: {
+    backgroundColor: '#03C988',
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 20,
+  },
+  buttonText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontSize: 18,
+  },
+  bottomContainer: {
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  linkText: {
+    color: '#007BFF',
+    textAlign: 'center',
   },
 });
 

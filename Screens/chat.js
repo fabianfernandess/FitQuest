@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Image,ImageBackground,KeyboardAvoidingView } from 'react-native';
+import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Image, ImageBackground } from 'react-native';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_API_KEY } from '@env';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { ref, set, get } from 'firebase/database';
+import { ref, set } from 'firebase/database';
 import { db } from '../firebaseConfig';
 import { Video } from 'expo-av';
 
@@ -108,8 +108,7 @@ const Chat = ({ route }) => {
 
         **Task:**
         - Start each session with a warm greeting. Introduce yourself, the house, and the first exercise, play the demo video immediately after, and confirm that ${name} has completed it before moving on to the next step. Maintain a friendly, motivating tone throughout, and use the points system to keep ${name} engaged and motivated. Ensure the conversation is short and to the point, with only one exercise or task discussed at a time.
-
-`;
+        `;
 
         const initializedModel = genAI.getGenerativeModel({
           model: 'gemini-1.5-pro',
@@ -122,8 +121,7 @@ const Chat = ({ route }) => {
           const prompt = `Hello ${name}, welcome to the House of ${house}! Based on your BMI of ${bmi}, activity level (${exerciseLevel}), and your selected goals (${selectedOptions.join(', ')}), I have tailored a fitness plan for you. Let's get started!`;
 
           const result = await initializedModel.generateContent(prompt);
-          const response = await result.response;
-          const botMessage = response.text();
+          const botMessage = result.response?.text();
 
           setMessages([{ id: 1, text: botMessage, sender: 'trainer' }]);
         }
@@ -148,16 +146,44 @@ const Chat = ({ route }) => {
         setImageUri(data.uri);
         setCameraVisible(false);
 
-        const newMessage = { id: messages.length + 1, text: 'Image captured', imageUri: data.uri, sender: 'user' };
-        setMessages([...messages, newMessage]);
+        // Directly use the base64 data
+        const base64ImageData = data.base64;
 
-        // Save message to Firebase
-        await set(ref(db, `chats/${encodedEmail}`), messages);
+        // Prepare the image data for Gemini
+        const imageData = {
+          mimeType: 'image/jpeg',
+          data: base64ImageData
+        };
+
+        // Use the image data in your AI model prompt
+        if (model) {
+          const result = await model.generateContent([
+            {
+              inlineData: imageData,
+            },
+            { text: "Analyze this meal image." }
+          ]);
+
+          const botMessage = result.response?.text || "Sorry, I couldn't process the image.";
+
+          const botResponse = {
+            id: messages.length + 2,
+            text: botMessage,
+            sender: 'trainer',
+            type: 'text',
+          };
+
+          const finalMessages = [...messages, botResponse];
+          setMessages(finalMessages);
+
+          // Save chat to Firebase with encoded email
+          await set(ref(db, `chats/${encodedEmail}`), finalMessages);
+        }
       } else {
         console.error("Camera reference is not available");
       }
     } catch (error) {
-      console.error('Error capturing image:', error);
+      console.error('Error capturing image or processing with Gemini:', error);
     }
   };
 
@@ -167,14 +193,13 @@ const Chat = ({ route }) => {
       const updatedMessages = [...messages, newMessage];
       setMessages(updatedMessages);
       setInput('');
-  
+
       try {
         if (model) {
           const prompt = messages.map(msg => msg.text).join('\n') + `\n${input}`;
           const result = await model.generateContent(prompt);
-          const response = await result.response;
-          const botMessage = response.text();
-  
+          const botMessage = result.response?.text();
+
           let videoUrl = null;
           for (let exercise in exerciseVideos) {
             if (botMessage.includes(exercise)) {
@@ -182,7 +207,7 @@ const Chat = ({ route }) => {
               break;
             }
           }
-  
+
           const botResponse = { 
             id: messages.length + 2, 
             text: botMessage, 
@@ -190,10 +215,10 @@ const Chat = ({ route }) => {
             type: videoUrl ? 'video' : 'text', 
             videoUrl: videoUrl 
           };
-  
+
           const finalMessages = [...updatedMessages, botResponse];
           setMessages(finalMessages);
-  
+
           // Save chat to Firebase with encoded email
           await set(ref(db, `chats/${encodedEmail}`), finalMessages);
         } else {
@@ -204,8 +229,6 @@ const Chat = ({ route }) => {
       }
     }
   };
-  
-
 
   if (!initialized) {
     return (
@@ -231,83 +254,76 @@ const Chat = ({ route }) => {
             </CameraView>
         </View>
     );
-}
+  }
 
-return (
+  return (
+    <ImageBackground 
+      source={require('../assets/gradientBG.png')} 
+      style={styles.backgroundImage}
+    >
+      {/* Top Navigation */}
+      <View style={styles.topNavContainer}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Image source={require('../assets/back-icon.png')} style={styles.backIcon} />
+        </TouchableOpacity>
+        <View style={styles.titleContainer}></View>
+        <View style={styles.pointsContainer}>
+          <Image source={require('../assets/points-icon.png')} style={styles.pointsIcon} />
+          <Text style={styles.pointsText}>10</Text>
+        </View>
+      </View>
 
-        <ImageBackground 
-            source={require('../assets/gradientBG.png')} 
-            style={styles.backgroundImage}
-        >
-            {/* Top Navigation */}
-            <View style={styles.topNavContainer}>
-                <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                    <Image source={require('../assets/back-icon.png')} style={styles.backIcon} />
-                </TouchableOpacity>
-                <View style={styles.titleContainer}>
-                    {/* <Text style={styles.titleText}>Chat</Text> */}
+      {/* Main Chat Content */}
+      <View style={styles.container}>
+        <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
+          {messages.map(message => (
+            <View key={message.id} style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}>
+              <Image
+                source={message.sender === 'trainer' ? require('../assets/trainer.png') : require('../assets/user.png')}
+                style={styles.profilePic}
+              />
+              {message.type === 'video' ? (
+                <Video
+                  source={message.videoUrl}
+                  style={styles.video}
+                  useNativeControls
+                  resizeMode="contain"
+                  shouldPlay={true}   // This will start the video automatically
+                  isLooping={false}   // Set to true if you want the video to loop
+                />
+              ) : message.imageUri ? (
+                <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
+              ) : (
+                <View style={message.sender === 'trainer' ? styles.trainerBubble : styles.userBubble}>
+                  <Text style={message.sender === 'trainer' ? styles.trainerText : styles.userText}>
+                    {message.text}
+                  </Text>
                 </View>
-                <View style={styles.pointsContainer}>
-                    <Image source={require('../assets/points-icon.png')} style={styles.pointsIcon} />
-                    <Text style={styles.pointsText}>10</Text>
-                </View>
+              )}
             </View>
+          ))}
+        </ScrollView>
 
-            {/* Main Chat Content */}
-            <View style={styles.container}>
-                <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
-                    {messages.map(message => (
-                        <View key={message.id} style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}>
-                            <Image
-                                source={message.sender === 'trainer' ? require('../assets/trainer.png') : require('../assets/user.png')}
-                                style={styles.profilePic}
-                            />
-                            {message.type === 'video' ? (
-                                <Video
-                                    source={message.videoUrl}
-                                    style={styles.video}
-                                    useNativeControls
-                                    resizeMode="contain"
-                                    shouldPlay={true}   // This will start the video automatically
-                                    isLooping={false}   // Set to true if you want the video to loop
-                                />
-                            ) : message.imageUri ? (
-                                <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
-                            ) : (
-                                <View style={message.sender === 'trainer' ? styles.trainerBubble : styles.userBubble}>
-                                    <Text style={message.sender === 'trainer' ? styles.trainerText : styles.userText}>
-                                        {message.text}
-                                    </Text>
-                                </View>
-                            )}
-                        </View>
-                    ))}
-                </ScrollView>
-
-                {/* Input Container */}
-                <View style={styles.inputContainer}>
-                    <TouchableOpacity onPress={() => setCameraVisible(true)} style={styles.cameraButton}>
-                        <Image source={require('../assets/camera.png')} style={styles.cameraIcon} />
-                    </TouchableOpacity>
-                    <TextInput
-                        style={styles.input}
-                        value={input}
-                        onChangeText={setInput}
-                        placeholder="Type your questions..."
-                        placeholderTextColor="#888"
-                    />
-                    <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
-                        <Image source={require('../assets/send.png')} style={styles.sendIcon} />
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </ImageBackground>
-
-);
-
-
-   
-  };
+        {/* Input Container */}
+        <View style={styles.inputContainer}>
+          <TouchableOpacity onPress={() => setCameraVisible(true)} style={styles.cameraButton}>
+            <Image source={require('../assets/camera.png')} style={styles.cameraIcon} />
+          </TouchableOpacity>
+          <TextInput
+            style={styles.input}
+            value={input}
+            onChangeText={setInput}
+            placeholder="Type your questions..."
+            placeholderTextColor="#888"
+          />
+          <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
+            <Image source={require('../assets/send.png')} style={styles.sendIcon} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ImageBackground>
+  );
+};
 
 const styles = StyleSheet.create({
   backgroundImage: {
@@ -345,13 +361,13 @@ const styles = StyleSheet.create({
   trainerBubble: {
     padding: 15,
     maxWidth: '85%',
-    borderRadius: 10,  // Adjusted to standard percentage
-    backgroundColor: 'rgba(255, 255, 255, 0.08)'
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   userBubble: {
     backgroundColor: '#1ccf6e',
     padding: 10,
-    borderRadius: 10,  // Adjusted to standard percentage
+    borderRadius: 10,
     maxWidth: '80%',
     marginRight: 10,
   },
@@ -364,7 +380,7 @@ const styles = StyleSheet.create({
   video: {
     width: 320,
     height: 213,
-    borderRadius: 10, // Use percentage or fixed value
+    borderRadius: 10,
   },
   capturedImage: {
     width: 250,
@@ -451,7 +467,7 @@ const styles = StyleSheet.create({
   },
   cameraPreview: {
     flex: 1,
-    justifyContent: 'flex-end', // This ensures that the button is at the bottom
+    justifyContent: 'flex-end',
     width: '100%',
     height: '100%',
   },
@@ -459,7 +475,7 @@ const styles = StyleSheet.create({
     flex: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: 30, // Add some padding to bring the button above the very bottom edge
+    paddingBottom: 30,
   },
   captureButton: {
     backgroundColor: '#fff',
@@ -470,8 +486,7 @@ const styles = StyleSheet.create({
   captureButtonText: {
     fontSize: 14,
     color: '#000',
-  }
+  },
 });
-
 
 export default Chat;

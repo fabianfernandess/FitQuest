@@ -1,68 +1,140 @@
+// screens/UserInfoScreen.js
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
 
 const UserInfoScreen = ({ route, navigation }) => {
-  const [name, setName] = useState('');
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
-  const [exerciseLevel, setExerciseLevel] = useState('');
 
   // Extract email from route params
   const { email } = route.params;
 
   const handleNext = () => {
     const bmi = (weight / ((height / 100) ** 2)).toFixed(2);
-    // Pass name, height, weight, bmi, and email to the next screen
-    navigation.navigate('ExerciseLevel', { name, height, weight, bmi, email });
+    // Pass height, weight, bmi, and email to the next screen
+    navigation.navigate('ExerciseLevel', { height, weight, bmi, email });
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Let's get to know you better</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Name"
-        value={name}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="What's your height?"
-        value={height}
-        onChangeText={setHeight}
-        keyboardType="numeric"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="What's your weight?"
-        value={weight}
-        onChangeText={setWeight}
-        keyboardType="numeric"
-      />
-      
-      <Button title="Next" onPress={handleNext} />
-    </View>
+    <ImageBackground
+      source={require('../assets/signupBG.png')} // Change the path accordingly
+      style={styles.backgroundImage}
+    >
+      <View style={styles.container}>
+        <View style={styles.centeredContent}>
+          <View style={styles.stepperContainer}>
+            <View style={[styles.step, styles.activeStep]} />
+            <View style={[styles.step, styles.activeStep]} />
+            <View style={[styles.step, styles.inactiveStep]} />
+            <View style={[styles.step, styles.inactiveStep]} />
+          </View>
+
+          <Text style={styles.title}>Let's get to know you better</Text>
+
+          <Text style={styles.label}>What's your height?</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Type your height"
+            placeholderTextColor="#888"
+            value={height}
+            onChangeText={setHeight}
+            keyboardType="numeric"
+          />
+
+          <Text style={styles.label}>What's your weight?</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Type your weight"
+            placeholderTextColor="#888"
+            value={weight}
+            onChangeText={setWeight}
+            keyboardType="numeric"
+          />
+
+          <TouchableOpacity style={styles.button} onPress={handleNext}>
+            <Text style={styles.buttonText}>Next</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.bottomContainer}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.linkText}>Go back</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+    resizeMode: 'cover',
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    padding: 30,
+  },
+  centeredContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  stepperContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 68,
+  },
+  step: {
+    height: 3,
+    flex: 1,
+    marginHorizontal: 5,
+  },
+  activeStep: {
+    backgroundColor: '#fff',
+  },
+  inactiveStep: {
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
   },
   title: {
-    fontSize: 24,
-    marginBottom: 20,
+    fontSize: 28,
+    color: '#fff',
+    marginBottom: 60,
+    textAlign: 'center',
+  },
+  label: {
+    fontSize: 14,
+    color: '#fff',
+    marginBottom: 10,
   },
   input: {
-    width: '100%',
-    padding: 10,
-    marginVertical: 10,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
+    borderColor: '#333',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 40,
+    backgroundColor: 'rgba(36, 40, 47, 0.69)',
+    color: '#fff',
+  },
+  button: {
+    backgroundColor: '#03C988',
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 20,
+  },
+  buttonText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontSize: 18,
+  },
+  bottomContainer: {
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  linkText: {
+    color: '#007BFF',
+    textAlign: 'center',
   },
 });
 
