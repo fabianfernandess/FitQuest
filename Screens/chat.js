@@ -158,24 +158,29 @@ const Chat = ({ route }) => {
     if (!permission.granted) {
       await requestPermission();
     }
-
+  
     try {
       if (cameraRef.current) {
         const options = { quality: 0.5, base64: true };
         const data = await cameraRef.current.takePictureAsync(options);
-        setImageUri(data.uri);
+        const newImageMessage = {
+          id: messages.length + 1,
+          imageUri: data.uri, // Add image URI
+          sender: 'user',
+          type: 'image', // Specify the type as 'image'
+        };
+        const updatedMessagesWithImage = [...messages, newImageMessage];
+  
+        setMessages(updatedMessagesWithImage);
         setCameraVisible(false);
-
-        // Directly use the base64 data
+  
         const base64ImageData = data.base64;
-
-        // Prepare the image data for Gemini
+  
         const imageData = {
           mimeType: 'image/jpeg',
-          data: base64ImageData
+          data: base64ImageData,
         };
-
-        // Use the image data in your AI model prompt
+  
         if (model) {
           const result = await model.generateContent([
             {
@@ -183,20 +188,24 @@ const Chat = ({ route }) => {
             },
             { text: "Analyze this meal image." }
           ]);
-
-          const botMessage = result.response?.text || "Sorry, I couldn't process the image.";
-
+  
+          const botMessageText = result.response?.text();
+  
+          if (typeof botMessageText !== 'string') {
+            throw new Error('Expected response text to be a string');
+          }
+  
           const botResponse = {
-            id: messages.length + 2,
-            text: botMessage,
+            id: updatedMessagesWithImage.length + 1,
+            text: botMessageText,
             sender: 'trainer',
             type: 'text',
           };
-
-          const finalMessages = [...messages, botResponse];
+  
+          const finalMessages = [...updatedMessagesWithImage, botResponse];
           setMessages(finalMessages);
-
-          // Save chat to Firebase with encoded email
+  
+          // Save chat to Firebase
           await set(ref(db, `chats/${encodedEmail}`), finalMessages);
         }
       } else {
@@ -206,6 +215,9 @@ const Chat = ({ route }) => {
       console.error('Error capturing image or processing with Gemini:', error);
     }
   };
+  
+  
+  
 
   const sendMessage = async () => {
     if (input.trim()) {
@@ -301,11 +313,16 @@ const Chat = ({ route }) => {
         </View>
       </View>
 
-      {/* Main Chat Content */}
+  
       <View style={styles.container}>
-        <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
-          {messages.map(message => (
-            <View key={message.id} style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}>
+
+
+      <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
+          {messages.map((message, index) => (
+            <View 
+              key={message.id || index} 
+              style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}
+            >
               <Image
                 source={message.sender === 'trainer' ? require('../assets/trainer.png') : require('../assets/user.png')}
                 style={styles.profilePic}
@@ -316,10 +333,11 @@ const Chat = ({ route }) => {
                   style={styles.video}
                   useNativeControls
                   resizeMode="contain"
-                  shouldPlay={true}   // This will start the video automatically
-                  isLooping={false}   // Set to true if you want the video to loop
+                  shouldPlay={true}
+                  isLooping={true}
                 />
-              ) : message.imageUri ? (
+              ) : message.type === 'image' ? (
+                // Render the captured image
                 <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
               ) : (
                 <View style={message.sender === 'trainer' ? styles.trainerBubble : styles.userBubble}>
@@ -331,6 +349,7 @@ const Chat = ({ route }) => {
             </View>
           ))}
         </ScrollView>
+
 
         {/* Input Container */}
         <View style={styles.inputContainer}>
@@ -374,11 +393,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     marginBottom: 20,
+    fontSize: 16,
   },
   userMessage: {
     flexDirection: 'row-reverse',
     alignItems: 'flex-start',
     marginBottom: 20,
+    fontSize: 16,
   },
   profilePic: {
     width: 30,
@@ -401,9 +422,11 @@ const styles = StyleSheet.create({
   },
   trainerText: {
     color: '#fff',
+    fontSize: 16,
   },
   userText: {
     color: '#fff',
+    fontSize: 16,
   },
   video: {
     width: 320,
@@ -439,6 +462,7 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 20,
     color: '#fff',
+    fontSize: 16,
   },
   sendButton: {
     backgroundColor: '#03C988',
