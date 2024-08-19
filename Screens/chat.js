@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Image, ImageBackground } from 'react-native';
+import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Image, ImageBackground, Animated } from 'react-native';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_API_KEY } from '@env';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -41,6 +41,12 @@ const Chat = ({ route }) => {
   const cameraRef = useRef(null);
   const [permission, requestPermission] = useCameraPermissions();
 
+  // Define currentExercise and exerciseInProgress state
+  const [currentExercise, setCurrentExercise] = useState(null); // Track current exercise
+  const [exerciseInProgress, setExerciseInProgress] = useState(false); // Flag to prevent looping
+
+  const progress = useRef(new Animated.Value(0)).current;
+
   const userInfo = route.params?.userInfo || {};
   const {
     name = "User",
@@ -58,11 +64,11 @@ const Chat = ({ route }) => {
   const getBackgroundImage = () => {
     switch (house) {
       case 'House Nova':
-        return require('../assets/novaBG.png');
+        return backgroundImages.Nova;
       case 'House Valor':
-        return require('../assets/valorBG.png');
+        return backgroundImages.Valor;
       case 'House Elara':
-        return require('../assets/elaraBG.png');
+        return backgroundImages.Elara;
       default:
         return require('../assets/splash.png'); // Fallback image
     }
@@ -77,57 +83,57 @@ const Chat = ({ route }) => {
         }
 
         const systemInstruction = `
-        You are an advanced AI fitness trainer assigned to assist the user ${name}. 
-        ${name} belongs to the ${house}, and their fitness profile is as follows:
-        - BMI: ${bmi}
-        - Height: ${height} cm
-        - Weight: ${weight} kg
-        - Exercise Level: ${exerciseLevel}
-        - Fitness Goals: ${selectedOptions.join(', ')}
+        You are an advanced AI fitness trainer assisting the user ${name}. ${name} belongs to the ${house}, with the following fitness profile:
 
-        Your role is to embody the traits and training approach of the ${house} to provide personalized fitness coaching. Tailor your responses to match the user's fitness goals, offering guidance on exercises, nutrition, and motivation in short, engaging, and fun pieces. Use emojis and keep the tone light and motivational.
+        - **BMI:** ${bmi}
+        - **Height:** ${height} cm
+        - **Weight:** ${weight} kg
+        - **Exercise Level:** ${exerciseLevel}
+        - **Fitness Goals:** ${selectedOptions.join(', ')}
 
-        **House Traits:**
-        1. **House of Valor**
-          - **Trainer:** Maximus
-          - **Traits:** Strength, resilience, and high-intensity training.
-          - **Approach:** Be direct, assertive, and highly motivational. Push ${name} to exceed their limits with strength-building exercises.
+        **Your Role:**
+        - Provide personalized coaching, aligning with the traits of ${house}.
+        - Focus on exercises for which demo videos are available.
+        - Keep responses short, engaging, and motivational.
+        - Always mention points earned after each exercise.
+        - Avoid placeholders in responses.
 
-        2. **House of Elara**
-          - **Trainer:** Serene
-          - **Traits:** Flexibility, mental well-being, and endurance.
-          - **Approach:** Offer gentle encouragement with a focus on yoga, meditation, and balanced workouts. Keep the tone calm and supportive.
+        **House Traits and Approach:**
 
-        3. **House of Nova**
-          - **Trainer:** Lyra
-          - **Traits:** Innovation, agility, and cutting-edge fitness technology.
-          - **Approach:** Keep things fresh, dynamic, and tech-savvy. Engage ${name} with innovative workouts and maintain an inspiring tone.
+        1. **House of Valor (Trainer: Maximus):** Focus on strength and resilience. Provide clear, motivational guidance.
+          - Example: "Hi ${name}, I'm Maximus from House Valor! Your BMI is ${bmi}. Let's build your strength with some focused exercises. Ready to start? 💪"
+
+        2. **House of Elara (Trainer: Serene):** Focus on flexibility, well-being, and endurance. Offer gentle, supportive guidance.
+          - Example: "Hello ${name}, I'm Serene from House Elara. 🌿 Your BMI is ${bmi}. Let's work on balance and mindfulness together. Shall we begin?"
+
+        3. **House of Nova (Trainer: Lyra):** Focus on innovation and agility. Keep sessions dynamic and fun.
+          - Example: "Hey ${name}, I'm Lyra from House Nova! 🌟 With a BMI of ${bmi}, let's keep things fresh with innovative workouts. Ready to dive in?"
 
         **Responsibilities:**
-        1. **Step-by-Step Guidance:** 
-          - Start with exercises that have associated demo videos in the system. 
-          - Introduce one exercise at a time with a clear, concise instruction like, “Let's start with Jumping Jacks. Here's how to do it.”
-          - Immediately follow up with, “Here’s the demonstration,” and display the demo video right after the instruction.
-          - Ensure that the video is displayed right after the instruction, so ${name} can see how the exercise is performed.
-          - Wait for ${name} to confirm they’ve completed the exercise before moving on to the next step.
 
-        2. **Handling User Questions Related to Videos:**
-          - If ${name} asks questions related to an exercise right after a video has been shown, understand that the question is likely about the exercise demonstrated in the video.
-          - Provide further clarification, tips, or additional guidance on the specific exercise shown in the video, ensuring ${name} fully understands how to perform it correctly.
+        1. **Greeting and Overview:** Start each session with a warm greeting. Introduce yourself and provide a brief, supportive BMI overview.
 
-        3. **Progress and Points System:**
-          - After each completed exercise, remind ${name} of the points they’ve earned and how it contributes to their overall goals. For example, "Great job! You've earned 10 points for completing that exercise!"
+        2. **Exercise Guidance:** Introduce each exercise one at a time. Focus only on the following exercises for which demo videos are available:
+           - **Bicycle Crunch**
+           - **Burpees**
+           - **Push-Ups**
+           - **Squats**
+           - **Star Jumps**
+           - **Jumping Jacks**
 
-        4. **Meal Verification:**
-          - After the workout, guide ${name} to verify their meal by snapping a photo. Provide immediate feedback on the nutritional content and its alignment with their fitness goals.
-          - Reward verified meals with additional points to encourage healthy eating habits.
+           After explaining the exercise, immediately show the demo video. Wait for ${name} to confirm they’ve completed the exercise before moving on to the next step.
 
-        5. **Motivational Engagement:**
-          - Keep the interaction lively with motivational messages, emojis, and regular updates on their progress.
-          - Tailor responses based on ${name}'s performance, keeping them focused and engaged.
+        3. **User Questions:** Address user questions clearly and helpfully, focusing on the specific exercise discussed.
 
-        **Task:**
-        - Start each session with a warm greeting. Introduce yourself, the house, and the first exercise, play the demo video immediately after, and confirm that ${name} has completed it before moving on to the next step. Maintain a friendly, motivating tone throughout, and use the points system to keep ${name} engaged and motivated. Ensure the conversation is short and to the point, with only one exercise or task discussed at a time.
+        4. **Points System:** After each exercise, remind ${name} of the points they’ve earned and encourage continued progress.
+
+        5. **Meal Verification:** After workouts, guide ${name} to verify their meal with a photo. Provide feedback on its nutritional content and award points for healthy choices.
+
+        6. **Motivational Engagement:** Keep interactions lively and motivational, with regular progress updates. Tailor responses to ${name}'s performance.
+
+        **Warnings:**
+        - Do not include placeholders or vague instructions in responses.
+        - Always keep the interactions positive, encouraging, and clear.
         `;
 
         const initializedModel = genAI.getGenerativeModel({
@@ -152,13 +158,25 @@ const Chat = ({ route }) => {
     };
 
     initializeChat();
+
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: 3000, // 3 seconds for the splash screen
+      useNativeDriver: false,
+    }).start();
+
   }, [name, height, weight, bmi, exerciseLevel, house, selectedOptions]);
+
+  const progressInterpolate = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
 
   const takePicture = async () => {
     if (!permission.granted) {
       await requestPermission();
     }
-  
+
     try {
       if (cameraRef.current) {
         const options = { quality: 0.5, base64: true };
@@ -170,17 +188,17 @@ const Chat = ({ route }) => {
           type: 'image', // Specify the type as 'image'
         };
         const updatedMessagesWithImage = [...messages, newImageMessage];
-  
+
         setMessages(updatedMessagesWithImage);
         setCameraVisible(false);
-  
+
         const base64ImageData = data.base64;
-  
+
         const imageData = {
           mimeType: 'image/jpeg',
           data: base64ImageData,
         };
-  
+
         if (model) {
           const result = await model.generateContent([
             {
@@ -188,23 +206,23 @@ const Chat = ({ route }) => {
             },
             { text: "Analyze this meal image." }
           ]);
-  
+
           const botMessageText = result.response?.text();
-  
+
           if (typeof botMessageText !== 'string') {
             throw new Error('Expected response text to be a string');
           }
-  
+
           const botResponse = {
             id: updatedMessagesWithImage.length + 1,
             text: botMessageText,
             sender: 'trainer',
             type: 'text',
           };
-  
+
           const finalMessages = [...updatedMessagesWithImage, botResponse];
           setMessages(finalMessages);
-  
+
           // Save chat to Firebase
           await set(ref(db, `chats/${encodedEmail}`), finalMessages);
         }
@@ -215,9 +233,6 @@ const Chat = ({ route }) => {
       console.error('Error capturing image or processing with Gemini:', error);
     }
   };
-  
-  
-  
 
   const sendMessage = async () => {
     if (input.trim()) {
@@ -225,32 +240,49 @@ const Chat = ({ route }) => {
       const updatedMessages = [...messages, newMessage];
       setMessages(updatedMessages);
       setInput('');
-
+  
       try {
         if (model) {
-          const prompt = messages.map(msg => msg.text).join('\n') + `\n${input}`;
+          const prompt = messages.map((msg) => msg.text).join('\n') + `\n${input}`;
           const result = await model.generateContent(prompt);
+  
           const botMessage = result.response?.text();
-
+  
+          // Check if the botMessage contains any of the exercise keywords
           let videoUrl = null;
+          let exerciseMentioned = false;
+  
           for (let exercise in exerciseVideos) {
             if (botMessage.includes(exercise)) {
               videoUrl = exerciseVideos[exercise];
-              break;
+              exerciseMentioned = true;
+              break; // Stop looping once the relevant exercise video is found
             }
           }
-
-          const botResponse = { 
-            id: messages.length + 2, 
-            text: botMessage, 
-            sender: 'trainer', 
-            type: videoUrl ? 'video' : 'text', 
-            videoUrl: videoUrl 
+  
+          // Add trainer's message to the chat
+          const botResponse = {
+            id: updatedMessages.length + 1,
+            text: botMessage,
+            sender: 'trainer',
+            type: 'text',
           };
-
+  
           const finalMessages = [...updatedMessages, botResponse];
+  
+          // If an exercise was mentioned, add the corresponding video to the chat
+          if (exerciseMentioned && videoUrl) {
+            const videoMessage = {
+              id: finalMessages.length + 1,
+              sender: 'trainer',
+              type: 'video',
+              videoUrl: videoUrl,
+            };
+            finalMessages.push(videoMessage);
+          }
+  
           setMessages(finalMessages);
-
+  
           // Save chat to Firebase with encoded email
           await set(ref(db, `chats/${encodedEmail}`), finalMessages);
         } else {
@@ -258,47 +290,58 @@ const Chat = ({ route }) => {
         }
       } catch (error) {
         console.error('Error sending message:', error);
+        // Optionally, show a user-friendly error message to the user
+        setMessages([...updatedMessages, { id: updatedMessages.length + 1, text: "Sorry, something went wrong. Please try again.", sender: 'trainer' }]);
       }
     }
+  };
+  
+  
+    
+  
+
+  const handleExerciseComplete = () => {
+    setExerciseInProgress(false);
+    setCurrentExercise(null);
   };
 
   if (!initialized) {
     return (
       <ImageBackground
-      source={getBackgroundImage()}
-      style={styles.Loading_backgroundImage}
-    >
-      <View style={styles.Loading_container}>
-        <Text style={styles.Loading_welcomeText}>Hi Andrew, welcome to {house}!{'\n'}I'm Lyra your trainer!</Text>
-        <TouchableOpacity style={styles.Loading_button} onPress={() => navigation.navigate('NextScreen')}>
-          <Text style={styles.Loading_buttonText}>Next</Text>
-        </TouchableOpacity>
-      </View>
-    </ImageBackground>
+        source={getBackgroundImage()}
+        style={styles.Loading_backgroundImage}
+      >
+        <View style={styles.Loading_container}>
+          <Text style={styles.Loading_welcomeText}>Hi {name}, welcome to {house}!</Text>
+          <View style={styles.progressBarContainer}>
+            <Animated.View style={[styles.progressBar, { width: progressInterpolate }]} />
+          </View>
+        </View>
+      </ImageBackground>
     );
   }
 
   if (cameraVisible) {
     return (
-        <View style={styles.cameraContainer}>
-            <CameraView
-                style={styles.cameraPreview}
-                ref={cameraRef}
-                onCameraReady={() => console.log('Camera ready')}
-            >
-                <View style={styles.captureButtonContainer}>
-                    <TouchableOpacity onPress={takePicture} style={styles.captureButton}>
-                        <Text style={styles.captureButtonText}>SNAP</Text>
-                    </TouchableOpacity>
-                </View>
-            </CameraView>
-        </View>
+      <View style={styles.cameraContainer}>
+        <CameraView
+          style={styles.cameraPreview}
+          ref={cameraRef}
+          onCameraReady={() => console.log('Camera ready')}
+        >
+          <View style={styles.captureButtonContainer}>
+            <TouchableOpacity onPress={takePicture} style={styles.captureButton}>
+              <Text style={styles.captureButtonText}>SNAP</Text>
+            </TouchableOpacity>
+          </View>
+        </CameraView>
+      </View>
     );
   }
 
   return (
-    <ImageBackground 
-      source={require('../assets/gradientBG.png')} 
+    <ImageBackground
+      source={require('../assets/gradientBG.png')}
       style={styles.backgroundImage}
     >
       {/* Top Navigation */}
@@ -313,14 +356,11 @@ const Chat = ({ route }) => {
         </View>
       </View>
 
-  
       <View style={styles.container}>
-
-
-      <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
+        <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
           {messages.map((message, index) => (
-            <View 
-              key={message.id || index} 
+            <View
+              key={message.id || index}
               style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}
             >
               <Image
@@ -328,14 +368,26 @@ const Chat = ({ route }) => {
                 style={styles.profilePic}
               />
               {message.type === 'video' ? (
-                <Video
-                  source={message.videoUrl}
-                  style={styles.video}
-                  useNativeControls
-                  resizeMode="contain"
-                  shouldPlay={true}
-                  isLooping={true}
-                />
+                <>
+                  <Video
+                    source={message.videoUrl}
+                    style={styles.video}
+                    useNativeControls
+                    resizeMode="contain"
+                    shouldPlay={exerciseInProgress && currentExercise === message.text}
+                    isLooping={true} // Ensure the video doesn't loop
+                    onPlaybackStatusUpdate={(status) => {
+                      if (status.didJustFinish) {
+                        handleExerciseComplete(); // Mark exercise as completed when video finishes
+                      }
+                    }}
+                  />
+                  {exerciseInProgress && currentExercise === message.text && (
+                    <TouchableOpacity onPress={handleExerciseComplete} style={styles.completeButton}>
+                      <Text style={styles.completeButtonText}>Exercise Completed</Text>
+                    </TouchableOpacity>
+                  )}
+                </>
               ) : message.type === 'image' ? (
                 // Render the captured image
                 <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
@@ -349,7 +401,6 @@ const Chat = ({ route }) => {
             </View>
           ))}
         </ScrollView>
-
 
         {/* Input Container */}
         <View style={styles.inputContainer}>
@@ -540,38 +591,48 @@ const styles = StyleSheet.create({
     color: '#000',
   },
 
-Loading_backgroundImage: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      resizeMode: 'cover',
-    },
-    Loading_container: {
-      flex: 1,
-      justifyContent: 'flex-end',
-      alignItems: 'center',
-      paddingBottom: 40,
-    },
-    Loading_welcomeText: {
-      color: '#fff',
-      fontSize: 21,
-      textAlign: 'center',
-      marginBottom: 20,
-      marginHorizontal:50,
-    },
-    Loading_button: {
-      backgroundColor: '#03C988',
-      padding: 15,
-      borderRadius: 10,
-      marginTop:20,
-      width:331,
-    },
-    Loading_buttonText: {
-      color: '#fff',
-      textAlign: 'center',
-      fontSize: 18,
-    },
-
+  Loading_backgroundImage: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    resizeMode: 'cover',
+  },
+  Loading_container: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: 40,
+  },
+  Loading_welcomeText: {
+    color: '#fff',
+    fontSize: 21,
+    textAlign: 'center',
+    marginBottom: 20,
+    marginHorizontal: 50,
+  },
+  progressBarContainer: {
+    width: '80%',
+    height: 10,
+    backgroundColor: '#d8d8d8',
+    borderRadius: 5,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: 10,
+    backgroundColor: '#03C988',
+    borderRadius: 5,
+  },
+  completeButton: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: '#03C988',
+    borderRadius: 10,
+  },
+  completeButtonText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontSize: 16,
+  },
 });
 
 export default Chat;
