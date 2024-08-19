@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StyleSheet, View, ImageBackground, Animated, Image } from 'react-native';
@@ -17,9 +17,9 @@ const Stack = createNativeStackNavigator();
 
 // Splash screen component with background image, logo, and progress bar
 const SplashScreen = () => {
-  const progress = React.useRef(new Animated.Value(0)).current;
+  const progress = useRef(new Animated.Value(0)).current;
 
-  React.useEffect(() => {
+  useEffect(() => {
     Animated.timing(progress, {
       toValue: 1,
       duration: 3000, // 3 seconds
@@ -64,16 +64,21 @@ const HomeScreen = () => {
 };
 
 export default function App() {
-  const [initializing, setInitializing] = React.useState(true);
-  const [user, setUser] = React.useState(null);
+  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState(null);
   const auth = getAuth(app);
 
   const onAuthStateChangedHandler = (user) => {
     setUser(user);
-    if (initializing) setInitializing(false);
+    if (initializing) {
+      // Artificial delay to ensure splash screen is shown
+      setTimeout(() => {
+        setInitializing(false);
+      }, 2000); // 2-second delay
+    }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const subscriber = onAuthStateChanged(auth, onAuthStateChangedHandler);
     return subscriber;
   }, []);
@@ -116,8 +121,8 @@ const styles = StyleSheet.create({
     marginBottom: 40, // Add margin below the logo to create space for the progress bar
   },
   logo: {
-    width: 245, 
-    height: 208, 
+    width: 245,
+    height: 208,
   },
   progressBarContainer: {
     width: 250,

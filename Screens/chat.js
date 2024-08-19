@@ -374,7 +374,7 @@ const Chat = ({ route }) => {
                     style={styles.video}
                     useNativeControls
                     resizeMode="contain"
-                    shouldPlay={exerciseInProgress && currentExercise === message.text}
+                    shouldPlay={true}
                     isLooping={true} // Ensure the video doesn't loop
                     onPlaybackStatusUpdate={(status) => {
                       if (status.didJustFinish) {
