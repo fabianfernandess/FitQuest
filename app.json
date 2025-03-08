@@ -24,7 +24,7 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "openAI_API_KEY": "sk-None-5UhZ0ezbCrVACW1sZB93T3BlbkFJpWBIlkfUeAEIBKyj7CZX"
+      "openAI_API_KEY": ""
     }
   }
 }
