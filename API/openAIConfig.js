@@ -1,6 +1,7 @@
-export const fetchFitnessHouse = async (userData) => {
-  const OPENAI_API_KEY = "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"; // Ensure you have your API key
+import { OPENAI_API_KEY } from '@env';
 
+export const fetchFitnessHouse = async (userData) => {
+   
   const requestBody = {
     model: "gpt-4o",
     messages: [
