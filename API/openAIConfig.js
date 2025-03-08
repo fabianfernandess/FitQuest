@@ -1,7 +1,8 @@
 import { OPENAI_API_KEY } from '@env';
 
 export const fetchFitnessHouse = async (userData) => {
-   
+  const openAiApiKey = OPENAI_API_KEY; // ✅ Fix: Use the correct API key reference
+
   const requestBody = {
     model: "gpt-4o",
     messages: [
@@ -16,7 +17,7 @@ You are an advanced AI fitness classifier responsible for assigning users to one
 - Ideal for weightlifting, outdoor activities, and team sports.  
 - Appeals to disciplined individuals who push their limits.  
 
-🧘 **House of lumina** (Trainer: Serene)  
+🧘 **House of Lumina** (Trainer: Serene)  
 - Flexibility, mindfulness, and holistic well-being.  
 - Best for yoga, stretching, and home workouts.  
 - Attracts those seeking stress relief and body balance.  
@@ -42,7 +43,7 @@ You are an advanced AI fitness classifier responsible for assigning users to one
 
 ### **Classification Criteria:**
 1️⃣ **House of Valor:** Users interested in weightlifting, outdoor activities, and team sports.  
-2️⃣ **House of lumina:** Users who prefer yoga, flexibility, home workouts, and mindfulness.  
+2️⃣ **House of Lumina:** Users who prefer yoga, flexibility, home workouts, and mindfulness.  
 3️⃣ **House of Nova:** Users focused on HIIT, progress tracking, fast-paced training, and structured plans.  
 4️⃣ If mixed preferences, classify based on the strongest match considering both **exercise level** and **fitness goals**.  
 
@@ -79,8 +80,6 @@ BMR = (10 × weight in kg) + (6.25 × height in cm) - (5 × age) + 5
   "target_bmi": 22,
   "recommended_calories_per_day": 2200
 }
-
-
 \`\`\`
         `,
       },
@@ -99,26 +98,23 @@ BMR = (10 × weight in kg) + (6.25 × height in cm) - (5 × age) + 5
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        Authorization: `Bearer ${openAiApiKey}`, // ✅ Fix: Correctly use API Key
       },
       body: JSON.stringify(requestBody),
     });
 
-    const data = await response.json(); // Convert response to JSON
+    const data = await response.json();
     console.log("🛠 OpenAI Full Response:", data);
 
-    // 🔹 Ensure response is valid before parsing
     if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
       console.error("⚠️ Invalid OpenAI response format:", data);
       return null;
     }
 
-    // 🛠 OpenAI sometimes wraps JSON in code blocks, so we clean it
     let rawContent = data.choices[0].message.content.trim();
 
-    // 🔹 Remove Markdown code block if present
     if (rawContent.startsWith("```json")) {
-      rawContent = rawContent.slice(7, -3).trim(); // Remove ```json at start & ``` at end
+      rawContent = rawContent.slice(7, -3).trim();
     }
 
     let parsedResponse;
