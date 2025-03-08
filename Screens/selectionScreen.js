@@ -2,21 +2,22 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, Dimensions } from 'react-native';
 
 const options = [
-  { label: "Powerlifting", size: 120, house: "House of Valor" },
-  { label: "HIIT", size: 100, house: "House of Valor" },
-  { label: "Bodyweight Strength", size: 150, house: "House of Valor" },
-  { label: "Kettlebell Swings", size: 130, house: "House of Valor" },
-  { label: "Plyometrics", size: 110, house: "House of Valor" },
-  { label: "Yoga Flow", size: 140, house: "House of Elara" },
-  { label: "Endurance Running", size: 120, house: "House of Elara" },
-  { label: "Pilates Core", size: 130, house: "House of Elara" },
-  { label: "Mindful Meditation", size: 100, house: "House of Elara" },
-  { label: "Tai Chi", size: 120, house: "House of Elara" },
-  { label: "TRX Suspension", size: 130, house: "House of Nova" },
-  { label: "Functional Circuit", size: 120, house: "House of Nova" },
-  { label: "Virtual Reality", size: 140, house: "House of Nova" },
-  { label: "Agility Ladder", size: 110, house: "House of Nova" },
-  { label: "Dynamic Stretching", size: 130, house: "House of Nova" },
+  { label: "Quick & effective workouts", size: 120, house: "Nova" },
+  { label: "Love working out at home", size: 130, house: "Elara" },
+  { label: "Lifting heavy is my thing", size: 140, house: "Valor" },
+  { label: "Enjoy outdoor adventures", size: 130, house: "Elara" },
+  { label: "I like tracking my progress", size: 150, house: "Nova" },
+  { label: "Fast-paced & intense", size: 110, house: "Valor" },
+  { label: "I want to be more flexible", size: 140, house: "Elara" },
+  { label: "Workouts help me relax", size: 120, house: "Elara" },
+  { label: "I have limited workout time", size: 160, house: "Nova" },
+  { label: "HIIT is my go-to", size: 140, house: "Valor" },
+  { label: "Love working out with others", size: 140, house: "Nova" },
+  { label: "Building endurance matters", size: 150, house: "Elara" },
+  { label: "Strength training all the way", size: 120, house: "Valor" },
+  { label: "I enjoy speed & agility drills", size: 130, house: "Nova" },
+  { label: "Mind-body workouts are my vibe", size: 120, house: "Elara" },
+  { label: "Bodyweight exercises are my favorite", size: 130, house: "Valor" },
 ];
 
 const { width } = Dimensions.get('window');
@@ -125,7 +126,7 @@ const styles = StyleSheet.create({
     
   },
   bubblesContainer: {
-    paddingVertical:50,
+    paddingVertical:20,
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
@@ -135,7 +136,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(103, 122, 132, 0.19)',
     borderRadius: 100,
     marginHorizontal:5,
-    marginVertical: 5,
+    marginVertical: 2,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
