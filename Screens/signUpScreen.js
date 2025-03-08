@@ -20,7 +20,7 @@ const SignUpScreen = ({ navigation }) => {
         name: name,
       });
       // Navigate to UserInfo screen with email
-      navigation.navigate('UserInfo', { email });
+      navigation.navigate('UserInfo', { email,name });
     } catch (error) {
       console.error('Error signing up:', error);
     }

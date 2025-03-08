@@ -1,107 +1,97 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Dimensions, ImageBackground } from 'react-native';
-import { getAuth } from 'firebase/auth';
-import { getDatabase, ref, set } from 'firebase/database';
+import React from 'react';
+import { View, Text, StyleSheet, Image, ImageBackground, Dimensions, TouchableOpacity } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
-const houses = [
-  {
-    name: 'House Nova',
-    description: 'House Nova specializes in strength training, HIIT, and endurance exercises.',
-    image: require('../assets/houseNova.png'),
-    match: ['I want to lose weight', 'I like tracking my progress'],
-  },
-  {
-    name: 'House Elara',
-    description: 'House Elara focuses on flexibility, yoga, and mental well-being.',
-    image: require('../assets/houseElara.png'),
-    match: ['I need short, flexible workout plans', 'I prefer exercising at home'],
-  },
-  {
-    name: 'House Valor',
-    description: 'House Valor is for those who love outdoor activities and team sports.',
-    image: require('../assets/houseValor.png'),
-    match: ['I want to lose weight', 'I prefer exercising at home'],
-  },
-];
+// 🔹 House Crest Images
+const houseImages = {
+  Nova: require('../assets/houseofnova.png'),
+  lumina: require('../assets/houseoflumina.png'),
+  Valor: require('../assets/houseofvalor.png'),
+};
+
+// 🔹 Trainer Profile Images
+const trainerAvatars = {
+  Nova: require('../assets/novaPP.png'),
+  lumina: require('../assets/luminaPP.png'),
+  Valor: require('../assets/valorPP.png'),
+};
+
+// 🔹 Icons
+const icons = {
+  bmi: require('../assets/bullseye.png'),
+  calories: require('../assets/fire.png'),
+};
 
 const HouseSelectionScreen = ({ route, navigation }) => {
-  const { Name, email, height, weight, bmi, exerciseLevel, selectedOptions } = route.params;
+  const { house, trainer, recommended_calories_per_day, target_bmi, justification } = route.params || {};
 
-  const [selectedHouseIndex, setSelectedHouseIndex] = useState(0);
-  const selectedHouse = houses[selectedHouseIndex];
+  // 🛠 FIXED: Ensure the house key is always properly formatted
+  const houseKey = house?.trim()?.replace(/^House of /i, ''); // Remove extra spaces & prevent duplicate "House of"
+  console.log("DEBUG - Selected House:", houseKey); // Debugging: Check the actual value received
 
-  const auth = getAuth();
-  const db = getDatabase();
+  // 🏠 Correctly Assign House Crest and Trainer Profile Image
+  const houseImage = houseImages[houseKey] || houseImages.Nova;
+  const trainerAvatar = trainerAvatars[houseKey] || trainerAvatars.Nova;
 
-  const handleConfirm = () => {
-    const userId = auth.currentUser.uid;
-    const userRef = ref(db, `users/${userId}`);
-
-    const userInfo = {
-      name: Name || "",               // Default to an empty string if name is undefined
-      email: email || "",             // Default to an empty string if email is undefined
-      height: height || null,         // Default to null if height is undefined
-      weight: weight || null,         // Default to null if weight is undefined
-      bmi: bmi || null,               // Default to null if bmi is undefined
-      exerciseLevel: exerciseLevel || "", // Default to an empty string if exerciseLevel is undefined
-      house: selectedHouse.name || "",    // Default to an empty string if house name is undefined
-      selectedOptions: selectedOptions || [], // Default to an empty array if selectedOptions is undefined
-    };
-  
-    set(userRef, userInfo)
-      .then(() => {
-        navigation.navigate('Chat', { userInfo });
-      })
-      .catch((error) => {
-        console.error('Error writing document: ', error);
-      });
-  };
+  // 🛠 FIXED: Ensure proper title format
+  const houseTitle = `House of ${houseKey}`;
 
   return (
-    <ImageBackground
-      source={require('../assets/hselectionBG.png')} // Replace with the actual path to your background image
-      style={styles.backgroundImage}
-    >
+    <ImageBackground source={require('../assets/hselectionBG.png')} style={styles.backgroundImage}>
       <View style={styles.container}>
-        <Text style={styles.title}>Based on your selections you belong to</Text>
-        <Text style={styles.houseName}>{selectedHouse.name}</Text>
-        <ScrollView
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onScroll={(event) => {
-            const contentOffsetX = event.nativeEvent.contentOffset.x;
-            const selectedIndex = Math.round(contentOffsetX / width);
-            setSelectedHouseIndex(selectedIndex);
-          }}
-          contentContainerStyle={styles.scrollViewContent}
-        >
-          {houses.map((house, index) => (
-            <View key={index} style={[styles.cardContainer, index === selectedHouseIndex && styles.selectedCard]}>
-              <Image source={house.image} style={styles.houseImage} />
-              <Text style={styles.houseDescription}>{house.description}</Text>
-            </View>
-          ))}
-        </ScrollView>
-        <View style={styles.indicatorContainer}>
-          {houses.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.indicator,
-                index === selectedHouseIndex ? styles.activeIndicator : styles.inactiveIndicator,
-              ]}
-            />
-          ))}
-        </View>
-        <Text style={styles.swipeText}>Swipe to explore other houses</Text>
+        <Text style={styles.title}>Based on your selections, you belong to</Text>
+        <Text style={styles.houseName}>{houseTitle}</Text>
 
-        {/* Regular button replacing the swipe button */}
-        <TouchableOpacity onPress={handleConfirm} style={styles.confirmButton}>
-          <Text style={styles.confirmButtonText}>Confirm House</Text>
-        </TouchableOpacity>
+        {/* Main Card */}
+        <View style={styles.cardWrapper}>
+          <View style={styles.overflowContainer} />
+          <View style={styles.cardContainer}>
+            
+            {/* House Crest - FIXED */}
+            <Image source={houseImage} style={styles.houseImage} />
+
+            {/* Justification */}
+            <Text style={styles.justificationText}>{justification}</Text>
+
+            {/* Trainer Info Section */}
+            <View style={styles.trainerContainer}>
+              <View>
+                <Text style={styles.trainerLabel}>Trainer</Text>
+                <Text style={styles.trainerName}>{trainer}</Text>
+              </View>
+              {/* Trainer Avatar - FIXED */}
+              <Image source={trainerAvatar} style={styles.trainerAvatar} />
+            </View>
+
+            {/* BMI & Calories Section */}
+            <View style={styles.infoContainer}>
+              <View style={styles.infoBox}>
+                <View style={styles.infoTextContainer}>
+                  <Text style={styles.infoLabel}>Target{"\n"}BMI</Text>
+                  <Text style={styles.infoValue}>{target_bmi}</Text>
+                </View>
+                <Image source={icons.bmi} style={styles.infoIcon} />
+              </View>
+
+              <View style={styles.infoBox}>
+                <View style={styles.infoTextContainer}>
+                  <Text style={styles.infoLabel}>Daily{"\n"}Calories</Text>
+                  <Text style={styles.infoValue}>{recommended_calories_per_day} kcal</Text>
+                </View>
+                <Image source={icons.calories} style={styles.infoIcon} />
+              </View>
+            </View>
+          </View>
+          <View style={styles.overflowContainer} />
+        </View>
+
+        {/* Confirm Button */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.confirmButton} onPress={() => navigation.navigate('Chat', { house: houseKey })}>
+            <Text style={styles.confirmButtonText}>Confirm House</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </ImageBackground>
   );
@@ -117,88 +107,149 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingBottom:40
+    marginTop: 0, // ✅ Ensures no extra top margin
+    paddingTop: 0, // ✅ Avoids unnecessary spacing
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     color: '#B5B5B5',
-    marginBottom: 10,
     textAlign: 'center',
-    marginTop:120,
+    marginTop: 0, // ✅ Ensures no extra top margin
+    paddingTop: 0, // ✅ Avoids unnecessary spacing
+    
   },
   houseName: {
     fontSize: 28,
     color: '#fff',
-    marginBottom: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
     textAlign: 'center',
+    marginBottom:20,
   },
-  scrollViewContent: {
-    justifyContent: 'center',
+  cardWrapper: {
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingTop: 0, // ✅ Avoids unnecessary spacing
+    marginTop: 10,
+  },
+  overflowContainer: {
+    width: 100,
+    height: 475,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 7,
+    marginHorizontal: 20,
   },
   cardContainer: {
-    width: 274, // Figma dimensions
-    height: 334, // Figma dimensions
-    marginHorizontal: (width - 320) / 2, // Centering the card
-    padding: 20,
-    borderRadius: 15,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)', // Glassmorphic effect
-    justifyContent: 'center',
+    width: 274,
+    height: 475,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 7,
     alignItems: 'center',
+    padding: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 24,
-    borderColor: '#FFF', // Border color
-    borderWidth: 1, // Border width
-  },
-  selectedCard: {
-    transform: [{ scale: 1.1 }],
   },
   houseImage: {
-    width: 200, // Increase the logo size
-    height: 250, // Increase the logo size
-    marginBottom: 5,
+    width: 150,
+    height: 150,
+    marginBottom: 15,
+    marginTop:15,
   },
-  houseDescription: {
+  justificationText: {
     fontSize: 14,
     color: '#fff',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 15,
+    paddingHorizontal: 10,
   },
-  indicatorContainer: {
+  trainerContainer: {
+    width: '100%',
+    backgroundColor: 'rgba(103, 122, 132, 0.19)',
+    borderRadius: 7,
+    padding: 10,
     flexDirection: 'row',
-    marginVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  indicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginHorizontal: 5,
-  },
-  activeIndicator: {
-    backgroundColor: '#03C988',
-  },
-  inactiveIndicator: {
-    backgroundColor: '#ccc',
-  },
-  swipeText: {
+  trainerLabel: {
     fontSize: 14,
-    color: '#B5B5B5',
-    marginVertical: 20,
-    textAlign: 'center',
+    color: '#BBBBBB',
+  },
+  trainerName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#D9D9D9',
+    marginTop: 2,
+  },
+  trainerAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+  },
+  infoContainer: {
+    flexDirection: 'row',
+    marginTop: 10,
+    width: '100%',
+    justifyContent: 'space-between',
+  },
+  infoBox: {
+    width: '48%',
+    backgroundColor: 'rgba(103, 122, 132, 0.19)',
+    borderRadius: 7,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    position: 'relative',
+  },
+  infoTextContainer: {
+    flexDirection: 'column',
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: '#BBBBBB',
+    lineHeight: 18,
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#D9D9D9',
+    marginTop: 4,
+  },
+  infoIcon: {
+    width: 20,
+    height: 20,
+    position: 'absolute',
+    top: 5,
+    right: 10,
+  },
+  buttonContainer: {
+    position: 'absolute',
+    bottom: 30,
+    width: '100%',
+    alignItems: 'center',
   },
   confirmButton: {
+    width:320,
+    height: 50,
     backgroundColor: '#03C988',
-    padding: 15,
     borderRadius: 10,
-    marginTop:20,
-    width:331,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom:20,
   },
   confirmButtonText: {
+    fontSize: 16,
     color: '#fff',
-    textAlign: 'center',
+    fontWeight: '600',
+  },
+  errorText: {
+    color: 'red',
     fontSize: 18,
+    textAlign: 'center',
+    marginTop: 50,
   },
 });
 

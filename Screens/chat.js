@@ -18,7 +18,7 @@ const encodeEmail = (email) => {
 const backgroundImages = {
   Nova: require('../assets/novaBG.png'),
   Valor: require('../assets/valorBG.png'),
-  Elara: require('../assets/elaraBG.png'),
+  lumina: require('../assets/luminaBG.png'),
 };
 
 // Mapping exercises to video files
@@ -67,8 +67,8 @@ const Chat = ({ route }) => {
         return backgroundImages.Nova;
       case 'House Valor':
         return backgroundImages.Valor;
-      case 'House Elara':
-        return backgroundImages.Elara;
+      case 'House lumina':
+        return backgroundImages.lumina;
       default:
         return require('../assets/splash.png'); // Fallback image
     }
@@ -103,8 +103,8 @@ const Chat = ({ route }) => {
         1. **House of Valor (Trainer: Maximus):** Focus on strength and resilience. Provide clear, motivational guidance.
           - Example: "Hi ${name}, I'm Maximus from House Valor! Your BMI is ${bmi}. Let's build your strength with some focused exercises. Ready to start? 💪"
 
-        2. **House of Elara (Trainer: Serene):** Focus on flexibility, well-being, and endurance. Offer gentle, supportive guidance.
-          - Example: "Hello ${name}, I'm Serene from House Elara. 🌿 Your BMI is ${bmi}. Let's work on balance and mindfulness together. Shall we begin?"
+        2. **House of lumina (Trainer: Serene):** Focus on flexibility, well-being, and endurance. Offer gentle, supportive guidance.
+          - Example: "Hello ${name}, I'm Serene from House lumina. 🌿 Your BMI is ${bmi}. Let's work on balance and mindfulness together. Shall we begin?"
 
         3. **House of Nova (Trainer: Lyra):** Focus on innovation and agility. Keep sessions dynamic and fun.
           - Example: "Hey ${name}, I'm Lyra from House Nova! 🌟 With a BMI of ${bmi}, let's keep things fresh with innovative workouts. Ready to dive in?"

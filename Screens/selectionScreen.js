@@ -1,31 +1,39 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, Dimensions } from 'react-native';
+import { 
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, 
+  ImageBackground, Dimensions, ActivityIndicator 
+} from 'react-native';
+import { fetchFitnessHouse } from '../API/openAIConfig'; // ✅ Correct Import
+import { useNavigation } from '@react-navigation/native';
 
 const options = [
-  { label: "Quick & effective workouts", size: 120, house: "Nova" },
-  { label: "Love working out at home", size: 130, house: "Elara" },
-  { label: "Lifting heavy is my thing", size: 140, house: "Valor" },
-  { label: "Enjoy outdoor adventures", size: 130, house: "Elara" },
-  { label: "I like tracking my progress", size: 150, house: "Nova" },
-  { label: "Fast-paced & intense", size: 110, house: "Valor" },
-  { label: "I want to be more flexible", size: 140, house: "Elara" },
-  { label: "Workouts help me relax", size: 120, house: "Elara" },
-  { label: "I have limited workout time", size: 160, house: "Nova" },
-  { label: "HIIT is my go-to", size: 140, house: "Valor" },
-  { label: "Love working out with others", size: 140, house: "Nova" },
-  { label: "Building endurance matters", size: 150, house: "Elara" },
-  { label: "Strength training all the way", size: 120, house: "Valor" },
-  { label: "I enjoy speed & agility drills", size: 130, house: "Nova" },
-  { label: "Mind-body workouts are my vibe", size: 120, house: "Elara" },
-  { label: "Bodyweight exercises are my favorite", size: 130, house: "Valor" },
+  { label: "Quick & effective workouts", size: 120 },
+  { label: "Love working out at home", size: 130 },
+  { label: "Lifting heavy is my thing", size: 140 },
+  { label: "Enjoy outdoor adventures", size: 130 },
+  { label: "I like tracking my progress", size: 150 },
+  { label: "Fast-paced & intense", size: 110 },
+  { label: "I want to be more flexible", size: 140 },
+  { label: "Workouts help me relax", size: 120 },
+  { label: "I have limited workout time", size: 160 },
+  { label: "HIIT is my go-to", size: 140 },
+  { label: "Love working out with others", size: 140 },
+  { label: "Building endurance matters", size: 150 },
+  { label: "Strength training all the way", size: 120 },
+  { label: "I enjoy speed & agility drills", size: 130 },
+  { label: "Mind-body workouts are my vibe", size: 120 },
+  { label: "Bodyweight exercises are my favorite", size: 130 },
 ];
 
 const { width } = Dimensions.get('window');
 
-const SelectionScreen = ({ route, navigation }) => {
-  const { Name, email, height, weight, bmi, exerciseLevel } = route.params;
+const SelectionScreen = ({ route }) => {
+  const { name, email, height, weight, bmi, exerciseLevel,age } = route.params;
   const [selectedOptions, setSelectedOptions] = useState([]);
+  const [loading, setLoading] = useState(false); // ✅ Loading State
+  const navigation = useNavigation();
 
+  // Toggle selected preferences
   const toggleOption = (option) => {
     setSelectedOptions((prevSelected) =>
       prevSelected.includes(option.label)
@@ -34,16 +42,51 @@ const SelectionScreen = ({ route, navigation }) => {
     );
   };
 
-  const handleNext = () => {
-    navigation.navigate('HouseSelection', {
-      Name,
+  // Handle Next Button Click
+  const handleNext = async () => {
+    if (selectedOptions.length === 0) {
+      alert("Please select at least one option!");
+      return;
+    }
+  
+    setLoading(true); // ✅ Show Loading Indicator
+  
+    const userData = {
+      name,
+      age,
       email,
       height,
       weight,
       bmi,
-      exerciseLevel,
-      selectedOptions,
-    });
+      exercise_level: exerciseLevel, // Example: "Moderately Active"
+      preferences: selectedOptions, // Selected fitness preferences
+    };
+  
+    console.log("🚀 Sending User Data to OpenAI:", JSON.stringify(userData, null, 2)); // ✅ Debugging Log
+  
+    try {
+      const response = await fetchFitnessHouse(userData); // ✅ API Call
+      console.log("🔹 OpenAI Raw Response:", response); // ✅ Debugging Log
+  
+      if (!response || typeof response !== "object") {
+        throw new Error("Invalid response format from OpenAI");
+      }
+  
+      if (!response.house) {
+        console.warn("⚠️ No 'house' in response. Full Response:", response);
+        alert("Unexpected response from AI. Please try again.");
+        return;
+      }
+  
+      // ✅ Navigate to HouseSelectionScreen
+      navigation.navigate("HouseSelection", { ...response, userData });
+  
+    } catch (error) {
+      console.error("❌ Error fetching OpenAI response:", error);
+      alert("Error processing your request. Please try again.");
+    } finally {
+      setLoading(false); // ✅ Hide Loading Indicator
+    }
   };
 
   return (
@@ -79,14 +122,15 @@ const SelectionScreen = ({ route, navigation }) => {
           </View>
         </ScrollView>
 
-        <TouchableOpacity onPress={handleNext} style={styles.nextButton}>
-          <Text style={styles.nextButtonText}>Next</Text>
+        <TouchableOpacity onPress={handleNext} style={styles.nextButton} disabled={loading}>
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.nextButtonText}>Next</Text>}
         </TouchableOpacity>
       </View>
     </ImageBackground>
   );
 };
 
+// Styles remain unchanged
 const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
@@ -95,16 +139,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems:'center',
+    alignItems: 'center',
     paddingBottom: 35,
   },
   stepperContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginBottom: 48,
-    marginHorizontal:20,
-    marginTop:100,
-    marginHorizontal:30
+    marginHorizontal: 20,
+    marginTop: 100,
   },
   step: {
     height: 3,
@@ -114,28 +157,24 @@ const styles = StyleSheet.create({
   activeStep: {
     backgroundColor: '#fff',
   },
-  inactiveStep: {
-    backgroundColor: 'rgba(255, 255, 255, 0.16)',
-  },
   title: {
     fontSize: 28,
     color: '#fff',
     marginBottom: 20,
     textAlign: 'center',
-    marginHorizontal:50,
-    
+    marginHorizontal: 50,
   },
   bubblesContainer: {
-    paddingVertical:20,
+    paddingVertical: 20,
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    width: width * 2.5, // Adjust the width to control the wrapping (approx. 2.5 screen widths)
+    width: width * 2.5,
   },
   optionButton: {
     backgroundColor: 'rgba(103, 122, 132, 0.19)',
     borderRadius: 100,
-    marginHorizontal:5,
+    marginHorizontal: 5,
     marginVertical: 2,
     alignItems: 'center',
     justifyContent: 'center',
@@ -155,10 +194,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#03C988',
     padding: 15,
     borderRadius: 10,
-    marginTop:20,
-    width:331,
-    marginTop: 30,
-    marginHorizontal:20,
+    marginTop: 20,
+    width: 331,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   nextButtonText: {
     color: '#fff',

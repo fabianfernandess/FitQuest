@@ -1,78 +1,84 @@
-// screens/UserInfoScreen.js
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
+import { 
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, 
+  KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, ScrollView 
+} from 'react-native';
 
 const UserInfoScreen = ({ route, navigation }) => {
-  const [Name, setName] = useState(''); // New state for full name
+  const [age, setAge] = useState('');
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
-
-  // Extract email from route params
-  const { email } = route.params;
+  const { name, email } = route.params; // Get name & email
 
   const handleNext = () => {
     const bmi = (weight / ((height / 100) ** 2)).toFixed(2);
-    // Pass fullName, height, weight, bmi, and email to the next screen
-    navigation.navigate('ExerciseLevel', { Name, height, weight, bmi, email });
+    navigation.navigate('ExerciseLevel', { name, age, height, weight, bmi, email });
   };
 
   return (
-    <ImageBackground
-      source={require('../assets/signupBG.png')} // Change the path accordingly
-      style={styles.backgroundImage}
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === "ios" ? "padding" : "height"} 
+      style={{ flex: 1 }}
     >
-      <View style={styles.container}>
-        <View style={styles.centeredContent}>
-          <View style={styles.stepperContainer}>
-            <View style={[styles.step, styles.activeStep]} />
-            <View style={[styles.step, styles.activeStep]} />
-            <View style={[styles.step, styles.inactiveStep]} />
-            <View style={[styles.step, styles.inactiveStep]} />
-          </View>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ImageBackground source={require('../assets/signupBG.png')} style={styles.backgroundImage}>
+          <ScrollView contentContainerStyle={styles.container}>
+            <View style={styles.centeredContent}>
+              <View style={styles.stepperContainer}>
+                <View style={[styles.step, styles.activeStep]} />
+                <View style={[styles.step, styles.activeStep]} />
+                <View style={[styles.step, styles.inactiveStep]} />
+                <View style={[styles.step, styles.inactiveStep]} />
+              </View>
 
-          <Text style={styles.title}>Let's get to know you better</Text>
+              <Text style={styles.title}>Let's get to know you better</Text>
 
-          <Text style={styles.label}>Full Name</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Type your full name"
-            placeholderTextColor="#888"
-            value={Name}
-            onChangeText={setName}
-          />
+              <Text style={styles.label}>How old are you?</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Type your age"
+                placeholderTextColor="#888"
+                onChangeText={setAge}
+                keyboardType="numeric"
+                returnKeyType="done"
+              />
 
-          <Text style={styles.label}>What's your height?</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Type your height"
-            placeholderTextColor="#888"
-            value={height}
-            onChangeText={setHeight}
-            keyboardType="numeric"
-          />
+              <Text style={styles.label}>What's your height? (cm)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Type your height"
+                placeholderTextColor="#888"
+                value={height}
+                onChangeText={setHeight}
+                keyboardType="numeric"
+                returnKeyType="done"
+              />
 
-          <Text style={styles.label}>What's your weight?</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Type your weight"
-            placeholderTextColor="#888"
-            value={weight}
-            onChangeText={setWeight}
-            keyboardType="numeric"
-          />
+              <Text style={styles.label}>What's your weight? (kg)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Type your weight"
+                placeholderTextColor="#888"
+                value={weight}
+                onChangeText={setWeight}
+                keyboardType="numeric"
+                returnKeyType="done"
+              />
 
-          <TouchableOpacity style={styles.button} onPress={handleNext}>
-            <Text style={styles.buttonText}>Next</Text>
-          </TouchableOpacity>
-        </View>
+              <TouchableOpacity style={styles.button} onPress={handleNext}>
+                <Text style={styles.buttonText}>Next</Text>
+              </TouchableOpacity>
+            </View>
 
-        <View style={styles.bottomContainer}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.linkText}>Go back</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </ImageBackground>
+            <View style={styles.bottomContainer}>
+              <TouchableOpacity onPress={() => navigation.goBack()}>
+                <Text style={styles.linkText}>Go back</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </ImageBackground>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -82,18 +88,17 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   container: {
-    flex: 1,
+    flexGrow: 1, 
     justifyContent: 'center',
     padding: 30,
   },
   centeredContent: {
-    flex: 1,
     justifyContent: 'center',
   },
   stepperContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 68,
+    marginBottom: 50,
   },
   step: {
     height: 3,
@@ -109,7 +114,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     color: '#fff',
-    marginBottom: 60,
+    marginBottom: 40,
     textAlign: 'center',
   },
   label: {
@@ -122,7 +127,7 @@ const styles = StyleSheet.create({
     borderColor: '#333',
     borderRadius: 10,
     padding: 15,
-    marginBottom: 40,
+    marginBottom: 20,
     backgroundColor: 'rgba(36, 40, 47, 0.69)',
     color: '#fff',
   },
