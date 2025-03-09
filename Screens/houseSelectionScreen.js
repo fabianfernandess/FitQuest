@@ -6,14 +6,14 @@ const { width } = Dimensions.get('window');
 // 🔹 House Crest Images
 const houseImages = {
   Nova: require('../assets/houseofnova.png'),
-  lumina: require('../assets/houseoflumina.png'),
+  Lumina: require('../assets/houseoflumina.png'),
   Valor: require('../assets/houseofvalor.png'),
 };
 
 // 🔹 Trainer Profile Images
 const trainerAvatars = {
   Nova: require('../assets/novaPP.png'),
-  lumina: require('../assets/luminaPP.png'),
+  Lumina: require('../assets/luminaPP.png'),
   Valor: require('../assets/valorPP.png'),
 };
 
@@ -24,31 +24,49 @@ const icons = {
 };
 
 const HouseSelectionScreen = ({ route, navigation }) => {
-  const { house, trainer, recommended_calories_per_day, target_bmi, justification } = route.params || {};
+  console.log("DEBUG - route.params:", route.params); // Check if data is received
 
-  // 🛠 FIXED: Ensure the house key is always properly formatted
-  const houseKey = house?.trim()?.replace(/^House of /i, ''); // Remove extra spaces & prevent duplicate "House of"
-  console.log("DEBUG - Selected House:", houseKey); // Debugging: Check the actual value received
+  const {
+    name = "Unknown",
+    email = "N/A",
+    height = 0,
+    weight = 0,
+    bmi = 0,
+    exerciseLevel = "N/A",
+    selectedOptions = [],
+    house = "Nova", // Default to Nova if not found
+    trainer = "Default Trainer",
+    recommended_calories_per_day = 2000,
+    target_bmi = 22,
+    justification = "You belong here!",
+  } = route.params || {};
 
-  // 🏠 Correctly Assign House Crest and Trainer Profile Image
+  console.log("DEBUG - House Selection Data:", {
+    name, email, height, weight, bmi, exerciseLevel, selectedOptions
+  });
+
+  // 🛠 Normalize houseKey
+  const formattedHouse = house?.trim()?.replace(/^House of /i, '');
+  const houseKey = formattedHouse?.charAt(0).toUpperCase() + formattedHouse?.slice(1).toLowerCase();
+
+  console.log("DEBUG - Selected House:", houseKey);
+
+  // 🏠 Assign House Crest and Trainer Profile Image
   const houseImage = houseImages[houseKey] || houseImages.Nova;
   const trainerAvatar = trainerAvatars[houseKey] || trainerAvatars.Nova;
-
-  // 🛠 FIXED: Ensure proper title format
-  const houseTitle = `House of ${houseKey}`;
 
   return (
     <ImageBackground source={require('../assets/hselectionBG.png')} style={styles.backgroundImage}>
       <View style={styles.container}>
         <Text style={styles.title}>Based on your selections, you belong to</Text>
-        <Text style={styles.houseName}>{houseTitle}</Text>
+        <Text style={styles.houseName}>{`House of ${houseKey}`}</Text>
 
         {/* Main Card */}
         <View style={styles.cardWrapper}>
           <View style={styles.overflowContainer} />
           <View style={styles.cardContainer}>
             
-            {/* House Crest - FIXED */}
+            {/* House Crest */}
             <Image source={houseImage} style={styles.houseImage} />
 
             {/* Justification */}
@@ -60,7 +78,6 @@ const HouseSelectionScreen = ({ route, navigation }) => {
                 <Text style={styles.trainerLabel}>Trainer</Text>
                 <Text style={styles.trainerName}>{trainer}</Text>
               </View>
-              {/* Trainer Avatar - FIXED */}
               <Image source={trainerAvatar} style={styles.trainerAvatar} />
             </View>
 
@@ -88,7 +105,27 @@ const HouseSelectionScreen = ({ route, navigation }) => {
 
         {/* Confirm Button */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.confirmButton} onPress={() => navigation.navigate('Chat', { house: houseKey })}>
+          <TouchableOpacity
+            style={styles.confirmButton}
+            onPress={() =>
+              navigation.navigate('Chat', {
+                userInfo: {
+                  name,
+                  email,
+                  height,
+                  weight,
+                  bmi,
+                  exerciseLevel,
+                  house: houseKey,
+                  trainer,
+                  recommended_calories_per_day,
+                  target_bmi,
+                  justification,
+                  selectedOptions,
+                },
+              })
+            }
+          >
             <Text style={styles.confirmButtonText}>Confirm House</Text>
           </TouchableOpacity>
         </View>
@@ -96,6 +133,10 @@ const HouseSelectionScreen = ({ route, navigation }) => {
     </ImageBackground>
   );
 };
+
+
+
+
 
 const styles = StyleSheet.create({
   backgroundImage: {

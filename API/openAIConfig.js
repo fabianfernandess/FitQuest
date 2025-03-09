@@ -1,4 +1,5 @@
 import { OPENAI_API_KEY } from '@env';
+console.log(OPENAI_API_KEY);
 
 export const fetchFitnessHouse = async (userData) => {
   const openAiApiKey = OPENAI_API_KEY; // ✅ Fix: Use the correct API key reference

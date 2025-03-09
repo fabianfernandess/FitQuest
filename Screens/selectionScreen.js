@@ -28,7 +28,7 @@ const options = [
 const { width } = Dimensions.get('window');
 
 const SelectionScreen = ({ route }) => {
-  const { name, email, height, weight, bmi, exerciseLevel,age } = route.params;
+  const { name, email, height, weight, bmi, exerciseLevel, age } = route.params;
   const [selectedOptions, setSelectedOptions] = useState([]);
   const [loading, setLoading] = useState(false); // ✅ Loading State
   const navigation = useNavigation();
@@ -48,39 +48,52 @@ const SelectionScreen = ({ route }) => {
       alert("Please select at least one option!");
       return;
     }
-  
+
     setLoading(true); // ✅ Show Loading Indicator
-  
+
     const userData = {
-      name,
-      age,
-      email,
-      height,
-      weight,
-      bmi,
-      exercise_level: exerciseLevel, // Example: "Moderately Active"
+      name: name || "Unknown",
+      age: age || "N/A",
+      email: email || "N/A",
+      height: height || 0,
+      weight: weight || 0,
+      bmi: bmi || 0,
+      exercise_level: exerciseLevel || "N/A",
       preferences: selectedOptions, // Selected fitness preferences
     };
-  
+
     console.log("🚀 Sending User Data to OpenAI:", JSON.stringify(userData, null, 2)); // ✅ Debugging Log
-  
+
     try {
       const response = await fetchFitnessHouse(userData); // ✅ API Call
       console.log("🔹 OpenAI Raw Response:", response); // ✅ Debugging Log
-  
+
       if (!response || typeof response !== "object") {
         throw new Error("Invalid response format from OpenAI");
       }
-  
+
       if (!response.house) {
         console.warn("⚠️ No 'house' in response. Full Response:", response);
         alert("Unexpected response from AI. Please try again.");
         return;
       }
-  
+
       // ✅ Navigate to HouseSelectionScreen
-      navigation.navigate("HouseSelection", { ...response, userData });
-  
+      navigation.navigate("HouseSelection", { 
+        name: userData.name,
+        email: userData.email,
+        height: userData.height,
+        weight: userData.weight,
+        bmi: userData.bmi,
+        exerciseLevel: userData.exercise_level,
+        selectedOptions: userData.preferences,
+        house: response.house,
+        trainer: response.trainer,
+        recommended_calories_per_day: response.recommended_calories_per_day,
+        target_bmi: response.target_bmi,
+        justification: response.justification,
+      });
+
     } catch (error) {
       console.error("❌ Error fetching OpenAI response:", error);
       alert("Error processing your request. Please try again.");
@@ -129,6 +142,7 @@ const SelectionScreen = ({ route }) => {
     </ImageBackground>
   );
 };
+
 
 // Styles remain unchanged
 const styles = StyleSheet.create({
