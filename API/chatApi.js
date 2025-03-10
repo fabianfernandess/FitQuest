@@ -1,79 +1,80 @@
-import { OPENAI_API_KEY } from '@env'; // Add your OpenAI API key in the environment variables
-import OpenAI from 'openai';
+import axios from 'axios';
+import { OPENAI_API_KEY } from '@env';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: OPENAI_API_KEY,
-});
+const API_URL = 'https://api.openai.com/v1/chat/completions';
 
-/**
- * Sends a message to ChatGPT and returns the structured response.
- * @param {string} userMessage - The user's input message.
- * @param {object} userInfo - The user's fitness profile and house information.
- * @returns {object} - The structured response from ChatGPT.
- */
-export const sendMessageToChatGPT = async (userMessage, userInfo) => {
-  const {
-    name,
-    house,
-    bmi,
-    height,
-    weight,
-    exerciseLevel,
-    selectedOptions,
-    justification,
-    recommended_calories_per_day,
-    target_bmi,
-  } = userInfo;
+export const getFitnessResponse = async (userData) => {
+    const systemPrompt = `You are an advanced AI fitness trainer facilitating personalized coaching sessions for the user ${userData.name}. ${userData.name} is part of the ${userData.house} and has the following fitness profile:
 
-  // Construct the enhanced system prompt
-  const systemPrompt = `
-    You are an advanced AI fitness trainer facilitating personalized coaching sessions for the user ${name}. ${name} is part of the ${house} and has the following fitness profile:
+- **BMI:** ${userData.bmi}
+- **Height:** ${userData.height} cm
+- **Weight:** ${userData.weight} kg
+- **Exercise Level:** ${userData.exerciseLevel}
+- **Fitness Goals:** ${userData.selectedOptions.join(', ')}
 
-    - **BMI:** ${bmi}
-    - **Height:** ${height} cm
-    - **Weight:** ${weight} kg
-    - **Exercise Level:** ${exerciseLevel}
-    - **Fitness Goals:** ${selectedOptions.join(', ')}
-    - **Justification for House Selection:** ${justification}
-    - **Recommended Daily Calories:** ${recommended_calories_per_day} kcal
-    - **Target BMI:** ${target_bmi}
+Your role is to provide tailored fitness guidance based on the characteristics of ${userData.house}, ensuring your responses are motivational, clear, and engaging. Do not entertain or respond to any inquiries unrelated to fitness.
 
-    Your role is to provide tailored fitness guidance based on the characteristics of ${house}, ensuring your responses are motivational, clear, and engaging. Do not entertain or respond to any inquiries unrelated to fitness.
+# Output Format
 
-    # Key Responsibilities
+Always respond in **valid JSON format** with six key items:
+- "response" (text-based guidance)
+- "youtubeLink" (exercise video URL)
+- "exerciseDetails" (reps, sets, and exercise names)
+- "dailyTasks" (comprehensive list of daily tasks)
+- "counters" (calorie, points, and task completion data)
 
-    - **Warm Greeting and BMI Overview:** Begin each session with a personalized greeting, introducing yourself in alignment with your house traits and offering a brief support-oriented BMI assessment.
-    - **Exercise Demonstration:** Explain each exercise with clarity, showing demo videos and guiding ${name} through their fitness journey. Specify reps and sets for each exercise and include the name of the exercise. Provide a YouTube link to the exercise video as a separate object.
-    - **Daily Task and Calorie Management:** Create a comprehensive list of tasks for the entire day, ensuring they align with ${name}'s fitness goals and are suitable for adding under a calendar. Ensure the daily calorie intake aligns with the recommended ${recommended_calories_per_day} kcal.
-    - **Calorie, Points, and Task Completion Counter:** Track the daily caloric intake, points earned, and completed tasks by ${name}. Ensure the calorie counter reflects input from food consumed by ${name}. Award points for exercise completion, making healthy food choices, and completing daily tasks.
-    - **User Inquiry Response:** Address any questions from ${name} with clear, concise answers focused solely on discussed exercises or fitness-related topics.
-    - **Meal Verification:** Post-workout, encourage ${name} to verify their meals with a photo, offering feedback on nutritional content and updating the calorie counter.
-    - **Motivational Engagement:** Regularly update ${name} on their progress, keeping the conversation lively and inspirational, tailored to their performance.
+Ensure your response **only contains valid JSON** without extra text.
 
-    # Output Format
+## Example Response:
+{
+  "response": "To improve flexibility, start with dynamic stretches. Try doing leg swings, arm circles, and hip rotations for 5 minutes before workouts.",
+  "youtubeLink": "https://www.youtube.com/watch?v=example",
+  "exerciseDetails": [{"name": "Leg Swings", "sets": 3, "reps": 15}],
+  "dailyTasks": ["Do 5 minutes of stretching in the morning", "Drink 2 liters of water"],
+  "counters": {"calories": 1500, "points": 10, "tasksCompleted": 2}
+}
+`;
 
-    Provide responses in JSON format with six key items: "response" for text-based guidance, "youtubeLink" for the exercise video, "exerciseDetails" for the specified reps, sets, and exercise names, "dailyTasks" for the comprehensive list of daily tasks, "counters" for calorie, points, and task completion information.
-  `;
+    try {
+        const response = await axios.post(API_URL, {
+            model: 'gpt-4o',
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userData.message }
+            ],
+            temperature: 0.7
+        }, {
+            headers: {
+                'Authorization': `Bearer ${OPENAI_API_KEY}`,
+                'Content-Type': 'application/json'
+            }
+        });
 
-  try {
-    // Send the message to ChatGPT
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4', // Use GPT-4 or GPT-3.5-turbo
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage },
-      ],
-      response_format: { type: 'json_object' }, // Ensure the response is in JSON format
-    });
-
-    // Parse the response
-    const responseText = completion.choices[0].message.content;
-    const response = JSON.parse(responseText);
-
-    return response;
-  } catch (error) {
-    console.error('Error communicating with ChatGPT:', error);
-    throw new Error('Failed to get a response from ChatGPT. Please try again.');
-  }
+        console.log('Raw OpenAI Response:', response.data);
+        
+        if (
+            response.data &&
+            response.data.choices &&
+            response.data.choices.length > 0 &&
+            response.data.choices[0].message &&
+            response.data.choices[0].message.content
+        ) {
+            const rawContent = response.data.choices[0].message.content.trim();
+            try {
+                if (!rawContent.startsWith('{') || !rawContent.endsWith('}')) {
+                    throw new Error('Response is not a valid JSON object');
+                }
+                return JSON.parse(rawContent);
+            } catch (error) {
+                console.error("Error parsing JSON from OpenAI:", error, "\nRaw Content:", rawContent);
+                return { response: "Sorry, I encountered an issue processing your request." };
+            }
+        } else {
+            console.error("Invalid response structure from OpenAI:", response.data);
+            return { response: "Sorry, I encountered an issue processing your request." };
+        }
+    } catch (error) {
+        console.error('Error fetching fitness response:', error);
+        return { response: 'Sorry, I encountered an issue processing your request. Please try again.' };
+    }
 };

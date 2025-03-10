@@ -1,9 +1,11 @@
 import { OPENAI_API_KEY } from '@env';
-console.log(OPENAI_API_KEY);
+console.log("house apikey is : "+ OPENAI_API_KEY);
+
 
 export const fetchFitnessHouse = async (userData) => {
   const openAiApiKey = OPENAI_API_KEY; // ✅ Fix: Use the correct API key reference
 
+ 
   const requestBody = {
     model: "gpt-4o",
     messages: [
