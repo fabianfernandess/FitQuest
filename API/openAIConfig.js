@@ -1,5 +1,5 @@
 import { OPENAI_API_KEY } from '@env';
-console.log("house apikey is : "+ OPENAI_API_KEY);
+console.log("Your house apikey is" + OPENAI_API_KEY);
 
 
 export const fetchFitnessHouse = async (userData) => {

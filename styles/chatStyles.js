@@ -56,11 +56,19 @@ const styles = StyleSheet.create({
       color: '#fff',
       fontSize: 16,
     },
+    
+    videoContainer: {
+      width: '100%',
+      height: 250, // Adjust height based on your UI
+      borderRadius: 10,
+      overflow: 'hidden',
+      marginVertical: 10,
+    },
     video: {
-      width: 320,
-      height: 213,
+      flex: 1,
       borderRadius: 10,
     },
+    
     capturedImage: {
       width: 250,
       height: 150,

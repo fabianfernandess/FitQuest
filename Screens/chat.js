@@ -3,24 +3,31 @@ import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Image,
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { ref, set } from 'firebase/database';
 import { db } from '../firebaseConfig';
-import { Video } from 'expo-av';
 import { getFitnessResponse } from '../API/chatApi'; // Import the OpenAI API function
-import styles from "../styles/chatStyles"
+import styles from "../styles/chatStyles";
+import { WebView } from 'react-native-webview';
 
 // Function to encode the email for Firebase path
 const encodeEmail = (email) => {
-  return email.replace(/\./g, ',').replace(/@/g, '_at_');
+  return email.replace(/\./g, ',').replace(/@/g, '_at_').replace(/\$/g, '_dollar_').replace(/#/g, '_hash_');
 };
 
 // Background images based on house
 const backgroundImages = {
   Nova: require('../assets/novaBG.png'),
   Valor: require('../assets/valorBG.png'),
-  lumina: require('../assets/luminaBG.png'),
+  Lumina: require('../assets/luminaBG.png'),
+};
+
+const trainerAvatars = {
+  Nova: require('../assets/novaPP.png'),
+  Lumina: require('../assets/luminaPP.png'),
+  Valor: require('../assets/valorPP.png'),
 };
 
 const Chat = ({ route }) => {
   const [messages, setMessages] = useState(route.params?.chatHistory || []);
+  const [points, setPoints] = useState(0); // State to store points
   const [input, setInput] = useState('');
   const [initialized, setInitialized] = useState(false);
   const [cameraVisible, setCameraVisible] = useState(false);
@@ -46,6 +53,7 @@ const Chat = ({ route }) => {
     selectedOptions = [],
   } = userInfo;
 
+  const trainerAvatar = trainerAvatars[house] || trainerAvatars.Nova;
   const encodedEmail = encodeEmail(email); // Encode the email for Firebase path
 
   const getBackgroundImage = () => {
@@ -54,8 +62,8 @@ const Chat = ({ route }) => {
         return backgroundImages.Nova;
       case 'Valor':
         return backgroundImages.Valor;
-      case 'lumina':
-        return backgroundImages.lumina;
+      case 'Lumina':
+        return backgroundImages.Lumina;
       default:
         return require('../assets/splash.png'); // Fallback image
     }
@@ -109,7 +117,11 @@ const Chat = ({ route }) => {
 
   const takePicture = async () => {
     if (!permission.granted) {
-      await requestPermission();
+      const { status } = await requestPermission();
+      if (status !== 'granted') {
+        alert('Camera permission is required to take pictures.');
+        return;
+      }
     }
 
     try {
@@ -143,42 +155,99 @@ const Chat = ({ route }) => {
       const updatedMessages = [...messages, newMessage];
       setMessages(updatedMessages);
       setInput('');
-
+  
       try {
         const response = await getFitnessResponse({
           ...userInfo,
           message: input,
         });
-
-        if (response.response) {
+  
+        console.log('Raw OpenAI Response:', response);
+  
+        if (response && response.choices && response.choices.length > 0) {
+          const content = response.choices[0].message.content;
+  
+          // Attempt to parse the content as JSON
+          let parsedContent;
+          try {
+            parsedContent = JSON.parse(content);
+          } catch (error) {
+            console.error('Error parsing OpenAI JSON response:', error);
+            console.error('Raw content:', content);
+  
+            // Fallback to a default response if parsing fails
+            parsedContent = {
+              response: "Sorry, I couldn't process your request. Please try again.",
+              youtubeLink: "",
+              exerciseDetails: {},
+              dailyTasks: [],
+              counters: { calories: 0, points: 0, tasksCompleted: 0 },
+            };
+          }
+  
+          // Ensure all required keys are present
+          const sanitizedResponse = {
+            response: parsedContent.response || "No response provided.",
+            youtubeLink: parsedContent.youtubeLink || "",
+            exerciseDetails: parsedContent.exerciseDetails || {},
+            dailyTasks: parsedContent.dailyTasks || [],
+            counters: sanitizeCounters(parsedContent.counters),
+          };
+  
+          // Extract points from the sanitized counters
+          const pointsEarned = sanitizedResponse.counters.points;
+  
+          // Update the points state
+          setPoints((prevPoints) => prevPoints + pointsEarned);
+  
+          // Create the bot response object
           const botResponse = {
             id: updatedMessages.length + 1,
-            text: response.response,
+            text: sanitizedResponse.response,
             sender: 'trainer',
             type: 'text',
+            points: pointsEarned, // Include points in the bot response
           };
-
+  
           const finalMessages = [...updatedMessages, botResponse];
-
-          // If a YouTube link is provided, add it as a video message
-          if (response.youtubeLink) {
+  
+          // If a YouTube link is provided and valid, add it as a video message
+          if (sanitizedResponse.youtubeLink && isValidUrl(sanitizedResponse.youtubeLink)) {
             const videoMessage = {
               id: finalMessages.length + 1,
               sender: 'trainer',
               type: 'video',
-              videoUrl: response.youtubeLink,
+              youtubeLink: sanitizedResponse.youtubeLink,
             };
             finalMessages.push(videoMessage);
           }
-
-          setMessages(finalMessages);
-
+  
           // Save chat to Firebase
           await set(ref(db, `chats/${encodedEmail}`), finalMessages);
+  
+          // Update the messages state
+          setMessages(finalMessages);
+        } else {
+          console.error('Invalid response structure from OpenAI:', response);
+          setMessages([
+            ...updatedMessages,
+            {
+              id: updatedMessages.length + 1,
+              text: "Sorry, something went wrong. Please try again.",
+              sender: 'trainer',
+            },
+          ]);
         }
       } catch (error) {
         console.error('Error sending message:', error);
-        setMessages([...updatedMessages, { id: updatedMessages.length + 1, text: "Sorry, something went wrong. Please try again.", sender: 'trainer' }]);
+        setMessages([
+          ...updatedMessages,
+          {
+            id: updatedMessages.length + 1,
+            text: "Sorry, something went wrong. Please try again.",
+            sender: 'trainer',
+          },
+        ]);
       }
     }
   };
@@ -186,6 +255,44 @@ const Chat = ({ route }) => {
   const handleExerciseComplete = () => {
     setExerciseInProgress(false);
     setCurrentExercise(null);
+  };
+
+  const convertToEmbedUrl = (url) => {
+    if (!url) return null;
+    const videoIdMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^"&?\/\s]{11})/);
+    return videoIdMatch ? `https://www.youtube.com/embed/${videoIdMatch[1]}` : url;
+  };
+
+  const isValidUrl = (url) => {
+    try {
+      new URL(url); // Throws an error if the URL is invalid
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  const sanitizeCounters = (counters) => {
+    if (!counters) {
+      return { calories: 0, points: 0, tasksCompleted: 0 };
+    }
+  
+    // Ensure all values are numbers, defaulting to 0 if invalid
+    return {
+      calories: isNaN(Number(counters.calories)) ? 0 : Number(counters.calories),
+      points: isNaN(Number(counters.points)) ? 0 : Number(counters.points),
+      tasksCompleted: isNaN(Number(counters.tasksCompleted)) ? 0 : Number(counters.tasksCompleted),
+    };
+  };
+
+  const sanitizeResponse = (response) => {
+    return {
+      response: response.response || "No response provided.",
+      youtubeLink: response.youtubeLink || "",
+      exerciseDetails: response.exerciseDetails || {},
+      dailyTasks: response.dailyTasks || [],
+      counters: sanitizeCounters(response.counters),
+    };
   };
 
   if (!initialized) {
@@ -235,7 +342,9 @@ const Chat = ({ route }) => {
         <View style={styles.titleContainer}></View>
         <View style={styles.pointsContainer}>
           <Image source={require('../assets/points-icon.png')} style={styles.pointsIcon} />
-          <Text style={styles.pointsText}>10</Text>
+          <Text style={styles.pointsText}>
+            {points || 0} {/* Default to 0 if null/undefined */}
+          </Text>
         </View>
       </View>
 
@@ -247,30 +356,19 @@ const Chat = ({ route }) => {
               style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}
             >
               <Image
-                source={message.sender === 'trainer' ? require('../assets/trainer.png') : require('../assets/user.png')}
+                source={trainerAvatar}
                 style={styles.profilePic}
               />
-              {message.type === 'video' ? (
-                <>
-                  <Video
-                    source={{ uri: message.videoUrl }}
-                    style={styles.video}
-                    useNativeControls
-                    resizeMode="contain"
-                    shouldPlay={true}
-                    isLooping={true}
-                    onPlaybackStatusUpdate={(status) => {
-                      if (status.didJustFinish) {
-                        handleExerciseComplete(); // Mark exercise as completed when video finishes
-                      }
-                    }}
+              {message.type === 'video' && isValidUrl(message.youtubeLink) ? (
+                <View style={styles.videoContainer}>
+                  <WebView
+                    source={{ uri: convertToEmbedUrl(message.youtubeLink) }}
+                    style={{ width: '80%', height: 200 }}
+                    allowsFullscreenVideo={true}
+                    javaScriptEnabled={true}
+                    domStorageEnabled={true}
                   />
-                  {exerciseInProgress && currentExercise === message.text && (
-                    <TouchableOpacity onPress={handleExerciseComplete} style={styles.completeButton}>
-                      <Text style={styles.completeButtonText}>Exercise Completed</Text>
-                    </TouchableOpacity>
-                  )}
-                </>
+                </View>
               ) : message.type === 'image' ? (
                 <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
               ) : (
