@@ -217,6 +217,16 @@ const styles = StyleSheet.create({
       textAlign: 'center',
       fontSize: 16,
     },
+    exerciseDetailsContainer: {
+      marginTop: 10,
+      padding: 10,
+      backgroundColor: '#f0f0f0',
+      borderRadius: 8,
+    },
+    exerciseText: {
+      fontSize: 14,
+      color: '#333',
+    },
   });
 
   export default styles
