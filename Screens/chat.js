@@ -303,67 +303,83 @@ const Chat = ({ route, navigation }) => {
         </View>
   
         <View style={styles.container}>
+
+
+
         <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
   {messages.map((message, index) => (
-   <View key={message.id || index} style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}>
-   {/* Parent Container for Trainer Message and Exercise Details/Buttons */}
-   <View style={{ flexDirection: 'column' }}>
-     {/* Trainer Message and Profile Picture */}
-     <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-       <Image source={trainerAvatar} style={styles.profilePic} />
- 
-       {message.type === 'video' && isValidUrl(message.youtubeLink) ? (
-         <View style={styles.videoContainer}>
-           <WebView
-             source={{ uri: convertToEmbedUrl(message.youtubeLink) }}
-             style={{ width: '80%', height: 200 }}
-             allowsFullscreenVideo={true}
-             javaScriptEnabled={true}
-             domStorageEnabled={true}
-           />
-         </View>
-       ) : message.type === 'image' ? (
-         <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
-       ) : (
-         <View style={message.sender === 'trainer' ? styles.trainerBubble : styles.userBubble}>
-           <Text style={message.sender === 'trainer' ? styles.trainerText : styles.userText}>
-             {message.text}
-           </Text>
-         </View>
-       )}
-     </View>
- 
-     {/* Exercise Details and Buttons Container */}
-     {message.exerciseDetails && (
-       <View style={{ flexDirection: 'column', alignSelf: 'flex-start', maxWidth: '90%' }}>
-         {/* Exercise Details Section */}
-         <View style={styles.exerciseDetailsContainer}>
-           {Array.isArray(message.exerciseDetails) ? (
-             message.exerciseDetails.map((exercise, i) => (
-               <Text key={i} style={styles.exerciseText}>
-                 {exercise.name}: {exercise.sets} sets of {exercise.reps} reps
-               </Text>
-             ))
-           ) : (
-             <Text style={styles.exerciseText}>
-               {message.exerciseDetails.name}: {message.exerciseDetails.sets} sets of {message.exerciseDetails.reps} reps
-             </Text>
-           )}
-         </View>
- 
-         {/* Buttons Section */}
-         <View style={styles.buttonContainer}>
-           <TouchableOpacity style={styles.completedButton} onPress={() => handleCompleted(message.id)}>
-             <Text style={styles.buttonText}>Completed</Text>
-           </TouchableOpacity>
-           <TouchableOpacity style={styles.tutorialButton} onPress={() => handleTutorial(message.id)}>
-             <Text style={styles.buttonText}>Need Tutorial</Text>
-           </TouchableOpacity>
-         </View>
-       </View>
-     )}
-   </View>
- </View>
+    <View key={message.id || index} style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}>
+      {/* Parent Container for Message and Exercise Details/Buttons */}
+      <View style={{ flexDirection: 'column' }}>
+        {/* Message and Profile Picture */}
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          {/* User Message: Avatar on the right, message bubble on the left */}
+          {message.sender === 'user' && (
+            <>
+              <View style={styles.userBubble}>
+                <Text style={styles.userText}>{message.text}</Text>
+              </View>
+              <Image source={trainerAvatar} style={styles.profilePic} />
+            </>
+          )}
+
+          {/* Trainer Message: Avatar on the left, message bubble on the right */}
+          {message.sender === 'trainer' && (
+            <>
+              <Image source={trainerAvatar} style={styles.profilePic} />
+              <View style={styles.trainerBubble}>
+                <Text style={styles.trainerText}>{message.text}</Text>
+              </View>
+            </>
+          )}
+        </View>
+
+        {/* Videos and Images */}
+        {message.type === 'video' && isValidUrl(message.youtubeLink) ? (
+          <View style={styles.videoContainer}>
+            <WebView
+              source={{ uri: convertToEmbedUrl(message.youtubeLink) }}
+              style={{ width: '80%', height: 200 }}
+              allowsFullscreenVideo={true}
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+            />
+          </View>
+        ) : message.type === 'image' ? (
+          <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
+        ) : null}
+
+        {/* Exercise Details and Buttons */}
+        {message.exerciseDetails && (
+          <View style={{ flexDirection: 'column', alignSelf: 'flex-start', maxWidth: '90%' }}>
+            {/* Exercise Details Section */}
+            <View style={styles.exerciseDetailsContainer}>
+              {Array.isArray(message.exerciseDetails) ? (
+                message.exerciseDetails.map((exercise, i) => (
+                  <Text key={i} style={styles.exerciseText}>
+                    {exercise.name}: {exercise.sets} sets of {exercise.reps} reps
+                  </Text>
+                ))
+              ) : (
+                <Text style={styles.exerciseText}>
+                  {message.exerciseDetails.name}: {message.exerciseDetails.sets} sets of {message.exerciseDetails.reps} reps
+                </Text>
+              )}
+            </View>
+
+            {/* Buttons Section */}
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity style={styles.completedButton} onPress={() => handleCompleted(message.id)}>
+                <Text style={styles.buttonText}>Completed</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.tutorialButton} onPress={() => handleTutorial(message.id)}>
+                <Text style={styles.buttonText}>Need Tutorial</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </View>
+    </View>
   ))}
 </ScrollView>
   

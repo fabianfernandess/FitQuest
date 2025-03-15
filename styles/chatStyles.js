@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         backgroundColor: 'rgba(255, 255, 255, 0.08)',
         marginBottom: 10,
-        marginLeft:40,
+        marginLeft:0,
         borderWidth: 1,
         maxWidth: '90%', // Add this line to constrain the width
         alignSelf: 'center', // Add this line to center the container
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'space-around',
-        marginLeft:0,
+        marginLeft:30,
         padding: 10,
         borderRadius: 10,
         maxWidth: '90%', // Add this line to constrain the width
