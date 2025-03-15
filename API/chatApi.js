@@ -150,6 +150,7 @@ export const getFitnessResponse = async (userData) => {
 - Ensure responses are **clear, direct, and actionable**.
 
 **The sets, reps, calories, points, and tasksCompleted should strictly be integers ONLY.**
+** Each response should only have one exercise or task at a time**
 
 **Example Response Format (Single Exercise):**
 \`\`\`json
@@ -210,7 +211,7 @@ Respond **only in JSON** format.`;
     const response = await axios.post(
       API_URL,
       {
-        model: "gpt-4",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userData.message },

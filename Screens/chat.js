@@ -224,6 +224,40 @@ const Chat = ({ route, navigation }) => {
     };
   };
 
+  const handleTutorial = (messageId) => {
+    const message = messages.find((msg) => msg.id === messageId);
+  
+    if (message && message.youtubeLink) {
+      const tutorialMessage = {
+        id: messages.length + 1,
+        text: "Here's a guided tutorial on how to do effective burpees!",
+        sender: "trainer",
+        youtubeLink: message.youtubeLink,
+        type: "video",
+      };
+  
+      setMessages([...messages, tutorialMessage]);
+    } else {
+      // Handle case where there's no YouTube link
+      const noVideoMessage = {
+        id: messages.length + 1,
+        text: "Sorry, I couldn't find a tutorial for that exercise.",
+        sender: "trainer",
+      };
+      setMessages([...messages, noVideoMessage]);
+    }
+  };
+  const handleCompleted = (messageId) => {
+    setPoints((prevPoints) => prevPoints + 5); // Add 5 points
+  
+    const completedMessage = {
+      id: messages.length + 1,
+      text: "Great job!",
+      sender: "trainer",
+    };
+  
+    setMessages([...messages, completedMessage]);
+  };
   if (!initialized) {
     return (
       <ImageBackground source={getBackgroundImage()} style={styles.Loading_backgroundImage}>
@@ -252,87 +286,111 @@ const Chat = ({ route, navigation }) => {
   }
 
   return (
-    <ImageBackground source={require('../assets/gradientBG.png')} style={styles.backgroundImage}>
-      {/* Top Navigation */}
-      <View style={styles.topNavContainer}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Image source={require('../assets/back-icon.png')} style={styles.backIcon} />
-        </TouchableOpacity>
-        <View style={styles.titleContainer}></View>
-        <View style={styles.pointsContainer}>
-          <Image source={require('../assets/points-icon.png')} style={styles.pointsIcon} />
-          <Text style={styles.pointsText}>
-            {points || 0} {/* Default to 0 if null/undefined */}
-          </Text>
+  
+      <ImageBackground source={require('../assets/gradientBG.png')} style={styles.backgroundImage}>
+        {/* Top Navigation */}
+        <View style={styles.topNavContainer}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Image source={require('../assets/back-icon.png')} style={styles.backIcon} />
+          </TouchableOpacity>
+          <View style={styles.titleContainer}></View>
+          <View style={styles.pointsContainer}>
+            <Image source={require('../assets/points-icon.png')} style={styles.pointsIcon} />
+            <Text style={styles.pointsText}>
+              {points || 0}
+            </Text>
+          </View>
         </View>
-      </View>
-
-      <View style={styles.container}>
+  
+        <View style={styles.container}>
         <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
-          {messages.map((message, index) => (
-            <View key={message.id || index} style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}>
-              <Image source={trainerAvatar} style={styles.profilePic}/>
-              {message.type === 'video' && isValidUrl(message.youtubeLink) ? (
-                <View style={styles.videoContainer}>
-                  <WebView
-                    source={{ uri: convertToEmbedUrl(message.youtubeLink) }}
-                    style={{ width: '80%', height: 200 }}
-                    allowsFullscreenVideo={true}
-                    javaScriptEnabled={true}
-                    domStorageEnabled={true}
-                  />
-                </View>
-              ) : message.type === 'image' ? (
-                <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
-              ) : (
-                <View style={message.sender === 'trainer' ? styles.trainerBubble : styles.userBubble}>
-                  <Text style={message.sender === 'trainer' ? styles.trainerText : styles.userText}>{message.text}</Text>
-                  {/* Render exerciseDetails if available */}
-                  {message.exerciseDetails && (
-                    <View style={styles.exerciseDetailsContainer}>
-                      {Array.isArray(message.exerciseDetails) ? (
-                        message.exerciseDetails.map((exercise, i) => (
-                          <Text key={i} style={styles.exerciseText}>
-                            {exercise.name}: {exercise.sets} sets of {exercise.reps} reps
-                          </Text>
-                        ))
-                      ) : (
-                        <Text style={styles.exerciseText}>
-                          {message.exerciseDetails.name}: {message.exerciseDetails.sets} sets of {message.exerciseDetails.reps} reps
-                        </Text>
-                      )}
-                    </View>
-                  )}
-                </View>
-              )}
-            </View>
-          ))}
-        </ScrollView>
-
-        {/* Input Container */}
-        <View style={styles.inputContainer}>
-          {isLoading ? (
-            <ActivityIndicator size="small" color="#0000ff" />
-          ) : (
-            <>
-              <TouchableOpacity onPress={() => setCameraVisible(true)} style={styles.cameraButton}>
-                <Image source={require('../assets/camera.png')} style={styles.cameraIcon} />
-              </TouchableOpacity>
-              <TextInput
-                style={styles.input}
-                value={input}
-                onChangeText={setInput}
-                placeholder="Type your questions..."
-                placeholderTextColor="#888"
-              />
-              <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
-                <Image source={require('../assets/send.png')} style={styles.sendIcon} />
-              </TouchableOpacity>
-            </>
-          )}
+  {messages.map((message, index) => (
+   <View key={message.id || index} style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}>
+   {/* Parent Container for Trainer Message and Exercise Details/Buttons */}
+   <View style={{ flexDirection: 'column' }}>
+     {/* Trainer Message and Profile Picture */}
+     <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+       <Image source={trainerAvatar} style={styles.profilePic} />
+ 
+       {message.type === 'video' && isValidUrl(message.youtubeLink) ? (
+         <View style={styles.videoContainer}>
+           <WebView
+             source={{ uri: convertToEmbedUrl(message.youtubeLink) }}
+             style={{ width: '80%', height: 200 }}
+             allowsFullscreenVideo={true}
+             javaScriptEnabled={true}
+             domStorageEnabled={true}
+           />
+         </View>
+       ) : message.type === 'image' ? (
+         <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
+       ) : (
+         <View style={message.sender === 'trainer' ? styles.trainerBubble : styles.userBubble}>
+           <Text style={message.sender === 'trainer' ? styles.trainerText : styles.userText}>
+             {message.text}
+           </Text>
+         </View>
+       )}
+     </View>
+ 
+     {/* Exercise Details and Buttons Container */}
+     {message.exerciseDetails && (
+       <View style={{ flexDirection: 'column', alignSelf: 'flex-start', maxWidth: '90%' }}>
+         {/* Exercise Details Section */}
+         <View style={styles.exerciseDetailsContainer}>
+           {Array.isArray(message.exerciseDetails) ? (
+             message.exerciseDetails.map((exercise, i) => (
+               <Text key={i} style={styles.exerciseText}>
+                 {exercise.name}: {exercise.sets} sets of {exercise.reps} reps
+               </Text>
+             ))
+           ) : (
+             <Text style={styles.exerciseText}>
+               {message.exerciseDetails.name}: {message.exerciseDetails.sets} sets of {message.exerciseDetails.reps} reps
+             </Text>
+           )}
+         </View>
+ 
+         {/* Buttons Section */}
+         <View style={styles.buttonContainer}>
+           <TouchableOpacity style={styles.completedButton} onPress={() => handleCompleted(message.id)}>
+             <Text style={styles.buttonText}>Completed</Text>
+           </TouchableOpacity>
+           <TouchableOpacity style={styles.tutorialButton} onPress={() => handleTutorial(message.id)}>
+             <Text style={styles.buttonText}>Need Tutorial</Text>
+           </TouchableOpacity>
+         </View>
+       </View>
+     )}
+   </View>
+ </View>
+  ))}
+</ScrollView>
+  
+          {/* Input Container */}
+          <View style={styles.inputContainer}>
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#0000ff" />
+            ) : (
+              <>
+                <TouchableOpacity onPress={() => setCameraVisible(true)} style={styles.cameraButton}>
+                  <Image source={require('../assets/camera.png')} style={styles.cameraIcon} />
+                </TouchableOpacity>
+                <TextInput
+                  style={styles.input}
+                  value={input}
+                  onChangeText={setInput}
+                  placeholder="Type your questions..."
+                  placeholderTextColor="#888"
+                />
+                <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
+                  <Image source={require('../assets/send.png')} style={styles.sendIcon} />
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
         </View>
-      </View>
-    </ImageBackground>
+      </ImageBackground>
   );
 };
 
