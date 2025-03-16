@@ -65,12 +65,12 @@ const Chat = ({ route, navigation }) => {
           console.error("Incomplete user information provided.");
           throw new Error("Incomplete user information provided.");
         }
-  
+    
         if (messages.length === 0) {
           const prompt = `Hello ${name}, welcome to the House of ${house}! Based on your BMI of ${bmi}, activity level (${exerciseLevel}), and your selected goals (${selectedOptions.join(', ')}), I have tailored a fitness plan for you. Let's get started!`;
-  
+    
           console.log("Sending prompt to OpenAI:", prompt); // Debugging log
-  
+    
           const response = await getFitnessResponse({
             name,
             house,
@@ -81,12 +81,17 @@ const Chat = ({ route, navigation }) => {
             selectedOptions,
             message: prompt,
           });
-  
+    
           console.log("OpenAI Response:", response); // Debugging log
-  
-          if (response.response) {
+    
+          if (response && response.response) {
             console.log("Setting greeting message:", response.response); // Debugging log
             setMessages([{ id: 1, text: response.response, sender: 'trainer' }]);
+          } else {
+            // Add the initialTrainerResponse here
+            const initialTrainerResponse = "Hi Trainer! Let's get started!";
+            console.log("Setting initial trainer message:", initialTrainerResponse);
+            setMessages([{ id: 1, text: initialTrainerResponse, sender: 'trainer' }]);
           }
         }
         setInitialized(true);
@@ -172,7 +177,9 @@ const Chat = ({ route, navigation }) => {
             type: 'text',
             points: pointsEarned,
             exerciseDetails: response.exerciseDetails,
+            youtubeLink: response.youtubeLink, // Add this line
           };
+
           console.log("Bot response object:", botResponse); // Debugging log
   
           const finalMessages = [...updatedMessages, botResponse];
@@ -234,28 +241,29 @@ const Chat = ({ route, navigation }) => {
   };
 
   const handleTutorial = (messageId) => {
-    const message = messages.find((msg) => msg.id === messageId);
-  
-    if (message && message.youtubeLink) {
-      const tutorialMessage = {
-        id: messages.length + 1,
-        text: "Here's a guided tutorial on how to do effective burpees!",
-        sender: "trainer",
-        youtubeLink: message.youtubeLink,
-        type: "video",
-      };
-  
-      setMessages([...messages, tutorialMessage]);
-    } else {
-      // Handle case where there's no YouTube link
-      const noVideoMessage = {
-        id: messages.length + 1,
-        text: "Sorry, I couldn't find a tutorial for that exercise.",
-        sender: "trainer",
-      };
-      setMessages([...messages, noVideoMessage]);
-    }
-  };
+  const message = messages.find((msg) => msg.id === messageId);
+
+  if (message && message.youtubeLink) {
+    const tutorialMessage = {
+      id: messages.length + 1,
+      text: "Here's a guided tutorial!",
+      sender: "trainer",
+      youtubeLink: message.youtubeLink, //Use message.youtubeLink
+      type: "video",
+    };
+
+    setMessages([...messages, tutorialMessage]);
+  } else {
+    // Handle case where there's no YouTube link
+    const noVideoMessage = {
+      id: messages.length + 1,
+      text: "Sorry, I couldn't find a tutorial for that exercise.",
+      sender: "trainer",
+    };
+    setMessages([...messages, noVideoMessage]);
+  }
+};
+
   const handleCompleted = (messageId) => {
     setPoints((prevPoints) => prevPoints + 5); // Add 5 points
   
@@ -351,7 +359,7 @@ const Chat = ({ route, navigation }) => {
             <View style={styles.videoContainer}>
               <WebView
                 source={{ uri: convertToEmbedUrl(message.youtubeLink) }}
-                style={{ width: '80%', height: 200 }}
+                style={{ width: '100%', height: 173 }}
                 allowsFullscreenVideo={true}
                 javaScriptEnabled={true}
                 domStorageEnabled={true}
@@ -364,33 +372,30 @@ const Chat = ({ route, navigation }) => {
           {/* Exercise Details and Buttons */}
           {message.exerciseDetails && (
   <View style={{ flexDirection: 'column', alignSelf: 'flex-start', maxWidth: '90%' }}>
-    {/* Exercise Details Section */}
-    <View style={styles.exerciseDetailsContainer}>
-      {Array.isArray(message.exerciseDetails) ? (
-        message.exerciseDetails.map((exercise, i) => (
-          <Text key={i} style={styles.exerciseText}>
-            {exercise.name}: {exercise.sets} sets of {exercise.reps} reps
-          </Text>
-        ))
-      ) : (
-        typeof message.exerciseDetails === 'object' && message.exerciseDetails.name ? (
-          <Text style={styles.exerciseText}>
-            {message.exerciseDetails.name}: {message.exerciseDetails.sets} sets of {message.exerciseDetails.reps} reps
-          </Text>
-        ) : null
-      )}
-    </View>
-
-    {/* Buttons Section */}
-    <View style={styles.buttonContainer}>
-      <TouchableOpacity style={styles.completedButton} onPress={() => handleCompleted(message.id)}>
-        <Text style={styles.buttonText}>Completed</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.tutorialButton} onPress={() => handleTutorial(message.id)}>
-        <Text style={styles.buttonText}>Need Tutorial</Text>
-      </TouchableOpacity>
-    </View>
+  <View style={styles.exerciseDetailsBox}>
+    {Array.isArray(message.exerciseDetails) ? (
+      message.exerciseDetails.map((exercise, i) => (
+        <Text key={i} style={styles.exerciseDetailsText}>
+          {exercise.exercise} - {exercise.sets} sets of {exercise.reps} reps
+        </Text>
+      ))
+    ) : (
+      typeof message.exerciseDetails === 'object' && message.exerciseDetails.exercise ? (
+        <Text style={styles.exerciseDetailsText}>
+          {message.exerciseDetails.exercise} - {message.exerciseDetails.sets} sets of {message.exerciseDetails.reps} reps
+        </Text>
+      ) : null
+    )}
   </View>
+  <View style={styles.buttonContainer}>
+    <TouchableOpacity style={styles.completedButton} onPress={() => handleCompleted(message.id)}>
+      <Text style={styles.buttonText}>Completed</Text>
+    </TouchableOpacity>
+    <TouchableOpacity style={styles.tutorialButton} onPress={() => handleTutorial(message.id)}>
+      <Text style={styles.buttonText}>Need Tutorial</Text>
+    </TouchableOpacity>
+  </View>
+</View>
 )}
         </View>
       </View>

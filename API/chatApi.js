@@ -4,7 +4,6 @@ import { OPENAI_API_KEY } from '@env';
 const API_URL = 'https://api.openai.com/v1/chat/completions';
 
 const validateResponse = (response) => {
-  // Keeping minimal validation, assuming model is consistent
   if (!response || typeof response !== "object") {
     throw new Error("Invalid response object.");
   }
@@ -27,19 +26,19 @@ export const getFitnessResponse = async (userData) => {
   - Exercise Level: ${userData.exerciseLevel}
   - Goals: ${userData.selectedOptions.join(", ")}
   - Targeted Calorie Intake: ${userData.targetedCalorieIntake}
-
-  Respond in JSON format as trained.`;
+  
+  Respond in JSON format as trained. Do not include any extra characters or text outside of the JSON object. **Always include the "response" field in your response.**`;// Added instruction
 
   try {
     const response = await axios.post(
       API_URL,
       {
-        model: "ft:gpt-4o-mini-2024-07-18:personal:fitquest-trainers:BBVsDJNA",
+        model: "ft:gpt-4o-mini-2024-07-18:personal:fitquest-trainers:BBVsDPd5:ckpt-step-75",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userData.message },
         ],
-        temperature: 0.7, // Adjust as needed
+        temperature: 0.6, // Reduced temperature
       },
       {
         headers: {
@@ -57,17 +56,22 @@ export const getFitnessResponse = async (userData) => {
       response.data.choices[0].message.content
     ) {
       let rawContent = response.data.choices[0].message.content.trim();
+      console.log('Raw OpenAI Response:', rawContent); // Log raw response
+
+      // Attempt to extract JSON even without backticks
+      let jsonString = rawContent;
       const jsonMatch = rawContent.match(/`json([\s\S]*?)`/);
       if (jsonMatch && jsonMatch[1]) {
-        rawContent = jsonMatch[1].trim();
+        jsonString = jsonMatch[1].trim();
       }
 
       let parsedResponse;
       try {
-        parsedResponse = JSON.parse(rawContent);
+        parsedResponse = JSON.parse(jsonString);
         validateResponse(parsedResponse);
       } catch (error) {
         console.error("Error parsing/validating response:", error);
+        console.error("JSON String:", jsonString); // Log the string causing the error
         throw new Error("Invalid response from model.");
       }
 
@@ -84,6 +88,9 @@ export const getFitnessResponse = async (userData) => {
         dailyTasks: parsedResponse.dailyTasks,
         counters: sanitizedCounters,
       };
+    } else {
+      console.error("Unexpected OpenAI API response structure:", response.data);
+      throw new Error("Unexpected API response.");
     }
   } catch (error) {
     console.error("Error fetching fitness response:", error);

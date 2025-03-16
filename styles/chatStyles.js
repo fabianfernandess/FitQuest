@@ -58,10 +58,11 @@ const styles = StyleSheet.create({
     },
     videoContainer: {
         width: '100%',
-        height: 250,
+        height: 200,
         borderRadius: 10,
         overflow: 'hidden',
         marginVertical: 10,
+        marginLeft:50,
     },
     video: {
         flex: 1,
@@ -217,45 +218,62 @@ const styles = StyleSheet.create({
     },
     exerciseDetailsContainer: {
         marginTop: 10,
-        padding: 15,
-        borderRadius: 10,
+        padding: 10, // Reduced padding
+        borderRadius: 5, // Reduced radius
         backgroundColor: 'rgba(255, 255, 255, 0.08)',
         marginBottom: 10,
-        marginLeft:0,
+        marginLeft: 0,
         borderWidth: 1,
-        maxWidth: '90%', // Add this line to constrain the width
-        alignSelf: 'center', // Add this line to center the container
+        borderColor: 'rgba(255, 255, 255, 0.15)', // Added border color
+        maxWidth: '90%',
+        alignSelf: 'center',
     },
     exerciseText: {
-        fontSize: 14,
+        fontSize: 16,
         color: '#FFF',
+        textAlign: 'center', // Center text
     },
     buttonContainer: {
         flexDirection: 'row',
         justifyContent: 'space-around',
-        marginLeft:30,
-        padding: 10,
-        borderRadius: 10,
-        maxWidth: '90%', // Add this line to constrain the width
-        alignSelf: 'center', // Add this line to center the container
-
+        padding: 5, // Reduced padding
+        borderRadius: 5, // Reduced radius
+        maxWidth: '90%',
+        alignSelf: 'center',
     },
     completedButton: {
         borderWidth: 1,
         borderColor: 'rgba(3, 201, 136, 0.73)',
-        padding: 10,
-        borderRadius: 10,
+        padding: 8, // Reduced padding
+        borderRadius: 5, // Reduced radius
+        marginHorizontal: 5, // Added horizontal margin
     },
     tutorialButton: {
         borderWidth: 1,
         borderColor: 'rgba(3, 201, 136, 0.73)',
-        padding: 10,
-        borderRadius: 10,
-        marginLeft: 10
+        padding: 8, // Reduced padding
+        borderRadius: 5, // Reduced radius
+        marginHorizontal: 5, // Added horizontal margin
     },
     buttonText: {
         fontSize: 16,
         color: 'rgba(3, 201, 136, 0.73)',
+    },
+    exerciseDetailsBox: { // New style
+        marginTop: 10,
+        padding: 15, // Reduced padding
+        borderRadius: 5, // Reduced radius
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        marginBottom: 10,
+        marginLeft: 40,
+        
+        maxWidth: '100%',
+        alignSelf: 'center',
+    },
+    exerciseDetailsText: { // New style
+        fontSize: 16,
+        color: '#FFF',
+        
     },
 });
 
