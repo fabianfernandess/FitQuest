@@ -60,14 +60,17 @@ const Chat = ({ route, navigation }) => {
   useEffect(() => {
     const initializeChat = async () => {
       try {
+        console.log("Initializing chat..."); // Debugging log
         if (!name || !house || !selectedOptions.length) {
           console.error("Incomplete user information provided.");
           throw new Error("Incomplete user information provided.");
         }
-
+  
         if (messages.length === 0) {
           const prompt = `Hello ${name}, welcome to the House of ${house}! Based on your BMI of ${bmi}, activity level (${exerciseLevel}), and your selected goals (${selectedOptions.join(', ')}), I have tailored a fitness plan for you. Let's get started!`;
-
+  
+          console.log("Sending prompt to OpenAI:", prompt); // Debugging log
+  
           const response = await getFitnessResponse({
             name,
             house,
@@ -78,8 +81,11 @@ const Chat = ({ route, navigation }) => {
             selectedOptions,
             message: prompt,
           });
-
+  
+          console.log("OpenAI Response:", response); // Debugging log
+  
           if (response.response) {
+            console.log("Setting greeting message:", response.response); // Debugging log
             setMessages([{ id: 1, text: response.response, sender: 'trainer' }]);
           }
         }
@@ -88,12 +94,12 @@ const Chat = ({ route, navigation }) => {
         console.error('Error initializing chat:', error);
       }
     };
-
+  
     initializeChat();
-
+  
     Animated.timing(progress, {
       toValue: 1,
-      duration: 3000, // 3 seconds for the splash screen
+      duration: 3000,
       useNativeDriver: false,
     }).start();
   }, [name, height, weight, bmi, exerciseLevel, house, selectedOptions]);
@@ -139,59 +145,62 @@ const Chat = ({ route, navigation }) => {
       const updatedMessages = [...messages, newMessage];
       setMessages(updatedMessages);
       setInput('');
-
+  
       try {
         const response = await getFitnessResponse({
           ...userInfo,
           message: input,
         });
-
-        console.log('Raw OpenAI Response:', response);
-
-        if (response && response.response) { // Changed to check for response property directly as per updated API function return
-          const sanitizedResponse = response; // Now the direct return from getFitnessResponse is already sanitized
-
+  
+        console.log('Raw OpenAI Response:', response); // Debugging log
+  
+        if (response && response.response) {
+          console.log("Valid response received:", response); // Debugging log
+  
           // Extract points from the sanitized counters
-          const pointsEarned = sanitizedResponse.counters.points;
-
+          const pointsEarned = response.counters.points;
+          console.log("Points earned:", pointsEarned); // Debugging log
+  
           // Update the points state
           setPoints((prevPoints) => prevPoints + pointsEarned);
-
+  
           // Create the bot response object
           const botResponse = {
             id: updatedMessages.length + 1,
-            text: sanitizedResponse.response,
+            text: response.response,
             sender: 'trainer',
             type: 'text',
-            points: pointsEarned, // Include points in the bot response
-            exerciseDetails: sanitizedResponse.exerciseDetails, // Include exerciseDetails
+            points: pointsEarned,
+            exerciseDetails: response.exerciseDetails,
           };
-
+          console.log("Bot response object:", botResponse); // Debugging log
+  
           const finalMessages = [...updatedMessages, botResponse];
-
-          // If a YouTube link is provided and valid, add it as a video message
-          if (sanitizedResponse.youtubeLink && isValidUrl(sanitizedResponse.youtubeLink)) {
-            const videoMessage = {
-              id: finalMessages.length + 1,
-              sender: 'trainer',
-              type: 'video',
-              youtubeLink: sanitizedResponse.youtubeLink,
-            };
-            finalMessages.push(videoMessage);
-          }
-
+          console.log("Final messages before state update:", finalMessages); // Debugging log
+  
           // Save chat to Firebase
-          await set(ref(db, `chats/${encodedEmail}`), finalMessages);
-
+          try {
+            await set(ref(db, `chats/${encodedEmail}`), finalMessages);
+            console.log("Chat saved to Firebase successfully."); // Debugging log
+          } catch (error) {
+            console.error("Error saving chat to Firebase:", error); // Debugging log
+          }
+  
           // Update the messages state
           setMessages(finalMessages);
         } else {
-          console.error('Invalid response structure from OpenAI:', response); // Keep error logging in case of issues
+          console.error('Invalid response structure from OpenAI:', response); // Debugging log
           setMessages([...updatedMessages, { id: updatedMessages.length + 1, text: "Sorry, something went wrong. Please try again.", sender: 'trainer' }]);
         }
       } catch (error) {
-        console.error('Error sending message:', error);
-        setMessages([...updatedMessages, { id: updatedMessages.length + 1, text: "Sorry, something went wrong. Please try again.", sender: 'trainer' }]);
+        console.error('Error sending message:', error); // Debugging log
+        let errorMessage = "Sorry, something went wrong. Please try again.";
+        if (error.message.includes("exerciseDetails")) {
+          errorMessage = "Sorry, I couldn't generate a valid exercise plan. Please try again.";
+        } else if (error.message.includes("network")) {
+          errorMessage = "Network error. Please check your connection and try again.";
+        }
+        setMessages([...updatedMessages, { id: updatedMessages.length + 1, text: errorMessage, sender: 'trainer' }]);
       } finally {
         setIsLoading(false); // Stop loading
       }
@@ -307,80 +316,86 @@ const Chat = ({ route, navigation }) => {
 
 
         <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
-  {messages.map((message, index) => (
-    <View key={message.id || index} style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}>
-      {/* Parent Container for Message and Exercise Details/Buttons */}
-      <View style={{ flexDirection: 'column' }}>
-        {/* Message and Profile Picture */}
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-          {/* User Message: Avatar on the right, message bubble on the left */}
-          {message.sender === 'user' && (
-            <>
-              <View style={styles.userBubble}>
-                <Text style={styles.userText}>{message.text}</Text>
-              </View>
-              <Image source={trainerAvatar} style={styles.profilePic} />
-            </>
-          )}
+  {messages.map((message, index) => {
+    console.log("Rendering message:", message); // Debugging log
 
-          {/* Trainer Message: Avatar on the left, message bubble on the right */}
-          {message.sender === 'trainer' && (
-            <>
-              <Image source={trainerAvatar} style={styles.profilePic} />
-              <View style={styles.trainerBubble}>
-                <Text style={styles.trainerText}>{message.text}</Text>
-              </View>
-            </>
-          )}
-        </View>
+    return (
+      <View key={message.id || index} style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}>
+        {/* Parent Container for Message and Exercise Details/Buttons */}
+        <View style={{ flexDirection: 'column' }}>
+          {/* Message and Profile Picture */}
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+            {/* User Message: Avatar on the right, message bubble on the left */}
+            {message.sender === 'user' && (
+              <>
+                <View style={styles.userBubble}>
+                  <Text style={styles.userText}>{message.text}</Text>
+                </View>
+                <Image source={trainerAvatar} style={styles.profilePic} />
+              </>
+            )}
 
-        {/* Videos and Images */}
-        {message.type === 'video' && isValidUrl(message.youtubeLink) ? (
-          <View style={styles.videoContainer}>
-            <WebView
-              source={{ uri: convertToEmbedUrl(message.youtubeLink) }}
-              style={{ width: '80%', height: 200 }}
-              allowsFullscreenVideo={true}
-              javaScriptEnabled={true}
-              domStorageEnabled={true}
-            />
+            {/* Trainer Message: Avatar on the left, message bubble on the right */}
+            {message.sender === 'trainer' && (
+              <>
+                <Image source={trainerAvatar} style={styles.profilePic} />
+                <View style={styles.trainerBubble}>
+                  <Text style={styles.trainerText}>{message.text}</Text>
+                </View>
+              </>
+            )}
           </View>
-        ) : message.type === 'image' ? (
-          <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
-        ) : null}
 
-        {/* Exercise Details and Buttons */}
-        {message.exerciseDetails && (
-          <View style={{ flexDirection: 'column', alignSelf: 'flex-start', maxWidth: '90%' }}>
-            {/* Exercise Details Section */}
-            <View style={styles.exerciseDetailsContainer}>
-              {Array.isArray(message.exerciseDetails) ? (
-                message.exerciseDetails.map((exercise, i) => (
-                  <Text key={i} style={styles.exerciseText}>
-                    {exercise.name}: {exercise.sets} sets of {exercise.reps} reps
-                  </Text>
-                ))
-              ) : (
-                <Text style={styles.exerciseText}>
-                  {message.exerciseDetails.name}: {message.exerciseDetails.sets} sets of {message.exerciseDetails.reps} reps
-                </Text>
-              )}
+          {/* Videos and Images */}
+          {message.type === 'video' && isValidUrl(message.youtubeLink) ? (
+            <View style={styles.videoContainer}>
+              <WebView
+                source={{ uri: convertToEmbedUrl(message.youtubeLink) }}
+                style={{ width: '80%', height: 200 }}
+                allowsFullscreenVideo={true}
+                javaScriptEnabled={true}
+                domStorageEnabled={true}
+              />
             </View>
+          ) : message.type === 'image' ? (
+            <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
+          ) : null}
 
-            {/* Buttons Section */}
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.completedButton} onPress={() => handleCompleted(message.id)}>
-                <Text style={styles.buttonText}>Completed</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.tutorialButton} onPress={() => handleTutorial(message.id)}>
-                <Text style={styles.buttonText}>Need Tutorial</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      </View>
+          {/* Exercise Details and Buttons */}
+          {message.exerciseDetails && (
+  <View style={{ flexDirection: 'column', alignSelf: 'flex-start', maxWidth: '90%' }}>
+    {/* Exercise Details Section */}
+    <View style={styles.exerciseDetailsContainer}>
+      {Array.isArray(message.exerciseDetails) ? (
+        message.exerciseDetails.map((exercise, i) => (
+          <Text key={i} style={styles.exerciseText}>
+            {exercise.name}: {exercise.sets} sets of {exercise.reps} reps
+          </Text>
+        ))
+      ) : (
+        typeof message.exerciseDetails === 'object' && message.exerciseDetails.name ? (
+          <Text style={styles.exerciseText}>
+            {message.exerciseDetails.name}: {message.exerciseDetails.sets} sets of {message.exerciseDetails.reps} reps
+          </Text>
+        ) : null
+      )}
     </View>
-  ))}
+
+    {/* Buttons Section */}
+    <View style={styles.buttonContainer}>
+      <TouchableOpacity style={styles.completedButton} onPress={() => handleCompleted(message.id)}>
+        <Text style={styles.buttonText}>Completed</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.tutorialButton} onPress={() => handleTutorial(message.id)}>
+        <Text style={styles.buttonText}>Need Tutorial</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+)}
+        </View>
+      </View>
+    );
+  })}
 </ScrollView>
   
           {/* Input Container */}
