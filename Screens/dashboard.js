@@ -1,18 +1,17 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native'; // Added missing ScrollView import
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
 
 const DashboardScreen = ({ route, navigation }) => {
-    // Placeholder data
     const {
-        name,
-        recommended_calories_per_day,
-        points,
-        tasks,
+        userInfo={},
+        recommended_calories_per_day = 2000,
+        points = 0,
+        tasks = []
     } = route.params || {};
 
-    const exercisesCompleted = "4/5"; // This variable is not used.
     const goalsCompleted = 5;
     const totalGoals = 10;
+    console.log("Tasks in dashboard:", JSON.stringify(tasks, null, 2));
 
     const days = [
         { key: 'mon', abbr: 'M' },
@@ -24,39 +23,39 @@ const DashboardScreen = ({ route, navigation }) => {
         { key: 'sun', abbr: 'Su' }
     ];
 
-
-
     return (
         <View style={styles.container}>
-            {/* Background Image */}
             <Image
-                source={require('../assets/dashboardBG.png')} // Replace with your image path
+                source={require('../assets/dashboardBG.png')}
                 style={styles.backgroundImage}
             />
 
-            {/* Top Bar */}
             <View style={styles.topBar}>
                 <Image
                     source={require('../assets/user.png')}
                     style={styles.avatar}
                 />
-                <Text style={styles.points}>{points}</Text>
-                <TouchableOpacity style={styles.upgradeButton} onPress={() => navigation.navigate('Upgrade')}>
+                <View style={styles.pointsContainer}>
+                    <Image source={require('../assets/points-icon.png')} style={styles.pointsIcon} />
+                    <Text style={styles.pointsText}>{points}</Text>
+                </View>
+                <TouchableOpacity 
+                    style={styles.upgradeButton} 
+                    onPress={() => navigation.navigate('Upgrade')}
+                >
                     <Text style={styles.upgradeText}>Upgrade</Text>
                 </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
-                {/* Greeting Section */}
                 <View style={styles.greetingSection}>
                     <Text style={styles.date}>5th March 2025</Text>
-                    <Text style={styles.greeting}>{name}, Let's conquer the day!</Text>
+                    <Text style={styles.greeting}>{userInfo.name}, Let's conquer the day!</Text>
                     <View style={styles.goalsContainer}>
                         <Text style={styles.goalsText}>{goalsCompleted}/{totalGoals} goals completed</Text>
                     </View>
                 </View>
 
-                {/* Data Cards */}
                 <View style={styles.dataCards}>
                     <View style={styles.dataCard}>
                         <Text style={styles.cardTitle}>Daily Calories</Text>
@@ -64,47 +63,49 @@ const DashboardScreen = ({ route, navigation }) => {
                     </View>
                     <View style={[styles.dataCard, { marginLeft: 16 }]}>
                         <Text style={styles.cardTitle}>Exercises</Text>
-                        <Text style={styles.cardValue}>{tasks?.length || 0}</Text> {/* added a fallback in case tasks is undefined */}
+                        <Text style={styles.cardValue}>{tasks.length}</Text>
                     </View>
                 </View>
 
-                {/* Day Selection */}
                 <View style={styles.daySelection}>
                     {days.map((day) => (
-                        <View
-                            key={day.key}  // Now using unique key
-                            style={styles.day}
-                        >
-                            <Text style={styles.dayText}>
-                                {day.abbr}
-                            </Text>
+                        <View key={day.key} style={styles.day}>
+                            <Text style={styles.dayText}>{day.abbr}</Text>
                         </View>
                     ))}
                 </View>
 
-                {/* Today's Plan */}
                 <View style={styles.todaysPlan}>
                     <Text style={styles.planTitle}>Today's plan</Text>
-                    {tasks && tasks.length > 0 ? ( // Check if tasks exists and has length
+                    {tasks.length > 0 ? (
                         tasks.map((item, index) => (
-                            <View key={index} style={styles.planItem}>
-                                <Text style={styles.planTime}>x</Text>
-                                <Text style={styles.planText}>{item}</Text> {/* changed from tasks to item */}
+                            <View 
+                                key={`task-${index}-${item.substring(0,5)}`} 
+                                style={styles.planItem}
+                            >
+                                <Text style={styles.planTime}>•</Text>
+                                <Text style={styles.planText}>{item}</Text>
                             </View>
                         ))
                     ) : (
-                        <Text style={styles.noPlanText}>No tasks for today.</Text> // added a message for when there are no tasks
+                        <Text style={styles.noPlanText}>No tasks for today.</Text>
                     )}
                 </View>
             </ScrollView>
 
-            {/* Bottom Bar */}
             <View style={styles.bottomBar}>
-                <TouchableOpacity onPress={() => navigation.navigate('Chat')}>
-                  <Image
-                      source={require("../assets/avatarAI.png")}
-                      style={styles.bottomAvatar}
-                  />
+                <TouchableOpacity onPress={() => navigation.navigate('Chat', {
+                    userInfo: {
+                        name,
+                        recommended_calories_per_day
+                    },
+                    points,
+                    tasks
+                })}>
+                    <Image
+                        source={require("../assets/avatarAI.png")}
+                        style={styles.bottomAvatar}
+                    />
                 </TouchableOpacity>
             </View>
         </View>
@@ -134,14 +135,23 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 16,
         zIndex: 1,
-        marginTop: 30, // Added for better spacing
+        marginTop: 30,
     },
     avatar: {
         width: 40,
         height: 40,
         borderRadius: 20,
     },
-    points: {
+    pointsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    pointsIcon: {
+        width: 24,
+        height: 24,
+        marginRight: 5,
+    },
+    pointsText: {
         color: '#fff',
         fontSize: 18,
     },
@@ -166,14 +176,14 @@ const styles = StyleSheet.create({
     },
     greeting: {
         color: '#fff',
-        fontSize: 24, // Increased size
+        fontSize: 24,
         fontWeight: 'bold',
         marginTop: 8,
     },
     goalsContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 16, // Increased spacing
+        marginTop: 16,
     },
     goalsText: {
         color: '#fff',
@@ -188,19 +198,19 @@ const styles = StyleSheet.create({
     },
     dataCard: {
         flex: 1,
-        backgroundColor: 'rgba(34, 34, 34, 0.8)', // Added transparency
+        backgroundColor: 'rgba(34, 34, 34, 0.8)',
         borderRadius: 10,
         padding: 16,
-        minHeight: 100, // Added minimum height
+        minHeight: 100,
     },
     cardTitle: {
         color: '#fff',
         fontSize: 16,
-        marginBottom: 8, // Added spacing
+        marginBottom: 8,
     },
     cardValue: {
         color: '#fff',
-        fontSize: 24, // Increased size
+        fontSize: 24,
         fontWeight: 'bold',
     },
     daySelection: {
@@ -208,33 +218,33 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around',
         padding: 16,
         zIndex: 1,
-        backgroundColor: 'rgba(34, 34, 34, 0.8)', // Added background
+        backgroundColor: 'rgba(34, 34, 34, 0.8)',
         borderRadius: 10,
         marginHorizontal: 16,
         marginBottom: 16,
     },
     day: {
-        width: 40, // Increased size
+        width: 40,
         height: 40,
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
     },
     dayText: {
-        color: '#fff', // Changed to white
+        color: '#fff',
         fontSize: 16,
     },
     todaysPlan: {
         padding: 16,
         zIndex: 1,
-        backgroundColor: 'rgba(34, 34, 34, 0.8)', // Added background
+        backgroundColor: 'rgba(34, 34, 34, 0.8)',
         borderRadius: 10,
         marginHorizontal: 16,
         marginBottom: 16,
     },
     planTitle: {
         color: '#fff',
-        fontSize: 20, // Increased size
+        fontSize: 20,
         fontWeight: 'bold',
         marginBottom: 16,
     },
@@ -248,7 +258,7 @@ const styles = StyleSheet.create({
     planTime: {
         color: '#888',
         marginRight: 16,
-        width: 70, // Fixed width for alignment
+        width: 70,
     },
     planText: {
         color: '#fff',
@@ -259,19 +269,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 16,
         zIndex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)', // Added background
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
     },
     bottomAvatar: {
-        width: 60, // Increased size
+        width: 60,
         height: 60,
         borderRadius: 30,
     },
-    noPlanText: { // Style for message when there are no tasks
-      color: '#fff',
-      fontStyle: 'italic',
-      textAlign: 'center'
+      noPlanText: {
+        color: '#fff',
+        fontStyle: 'italic',
+        textAlign: 'center'
     }
 });
 
 export default DashboardScreen;
-

@@ -1,18 +1,19 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, TextInput, ScrollView, TouchableOpacity, Image, ImageBackground, Animated, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, ScrollView, TouchableOpacity, Image, ImageBackground, Animated, ActivityIndicator, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { ref, set } from 'firebase/database';
+import { ref, set, get, onValue } from 'firebase/database';
 import { db } from '../firebaseConfig';
 import { getFitnessResponse } from '../API/chatApi';
 import styles from "../styles/chatStyles";
 import { WebView } from 'react-native-webview';
 
-// Function to encode the email for Firebase path
+// Helper function to generate unique IDs
+const generateId = () => Date.now() + Math.random().toString(36).substr(2, 9);
+
 const encodeEmail = (email) => {
   return email.replace(/\./g, ',').replace(/@/g, '_at_').replace(/\$/g, '_dollar_').replace(/#/g, '_hash_');
 };
 
-// Background images based on house
 const backgroundImages = {
   Nova: require('../assets/novaBG.png'),
   Valor: require('../assets/valorBG.png'),
@@ -25,52 +26,67 @@ const trainerAvatars = {
   Valor: require('../assets/valorPP.png'),
 };
 
-const Chat = ({ route, navigation }) => { // Added navigation as a prop
-  const [messages, setMessages] = useState(route.params?.chatHistory || []);
-  const [points, setPoints] = useState(0);
-  const [tasks, setTasks] = useState(''); // Corrected to useState
+const Chat = ({ route, navigation }) => {
+  const [messages, setMessages] = useState([]);
+  const [points, setPoints] = useState(route.params?.points || 0);
+  const [tasks, setTasks] = useState(route.params?.tasks || []);
   const [input, setInput] = useState('');
   const [initialized, setInitialized] = useState(false);
   const [cameraVisible, setCameraVisible] = useState(false);
-  const [imageUri, setImageUri] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const cameraRef = useRef(null);
+  const scrollViewRef = useRef(null);
   const [permission, requestPermission] = useCameraPermissions();
 
   const progress = useRef(new Animated.Value(0)).current;
 
   const userInfo = route.params?.userInfo || {};
-  const { name = "User", email = "dummy@outlook.com", height = 0, weight = 0, bmi = 0, exerciseLevel = "unknown", house = "unknown", selectedOptions = [], recommended_calories_per_day = 2000 } = userInfo;
+  const { name = "User", email = "dummy@outlook.com", height = 0, weight = 0, bmi = 0, 
+          exerciseLevel = "unknown", house = "unknown", selectedOptions = [], 
+          recommended_calories_per_day = 2000 } = userInfo;
 
   const trainerAvatar = trainerAvatars[house] || trainerAvatars.Nova;
   const encodedEmail = encodeEmail(email);
 
-  const getBackgroundImage = () => {
-    switch (house) {
-      case 'Nova':
-        return backgroundImages.Nova;
-      case 'Valor':
-        return backgroundImages.Valor;
-      case 'Lumina':
-        return backgroundImages.Lumina;
-      default:
-        return require('../assets/splash.png'); // Fallback image.
-    }
-  };
+  const getBackgroundImage = () => backgroundImages[house] || require('../assets/splash.png');
 
+  // Load chat history from Firebase
+  const loadChatHistory = useCallback(async () => {
+    try {
+      const snapshot = await get(ref(db, `chats/${encodedEmail}`));
+      if (snapshot.exists()) {
+        setMessages(snapshot.val());
+      }
+    } catch (error) {
+      console.error("Error loading chat history:", error);
+      Alert.alert("Error", "Could not load chat history");
+    }
+  }, [encodedEmail]);
+
+  // Real-time listener for chat updates
+  useEffect(() => {
+    const dbRef = ref(db, `chats/${encodedEmail}`);
+    const unsubscribe = onValue(dbRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setMessages(snapshot.val());
+      }
+    });
+
+    return () => unsubscribe();
+  }, [encodedEmail]);
+
+  // Initialize chat with welcome message if empty
   useEffect(() => {
     const initializeChat = async () => {
       try {
-        console.log("Initializing chat...");
         if (!name || !house || !selectedOptions.length) {
-          console.error("Incomplete user information provided.");
-          throw new Error("Incomplete user information provided.");
+          throw new Error("Incomplete user information");
         }
+
+        await loadChatHistory();
 
         if (messages.length === 0) {
           const prompt = `Hello ${name}, welcome to the House of ${house}! Based on your BMI of ${bmi}, activity level (${exerciseLevel}), and your selected goals (${selectedOptions.join(', ')}), I have tailored a fitness plan for you. Let's get started!`;
-
-          console.log("Sending prompt to OpenAI:", prompt);
 
           const response = await getFitnessResponse({
             name,
@@ -83,20 +99,18 @@ const Chat = ({ route, navigation }) => { // Added navigation as a prop
             message: prompt,
           });
 
-          console.log("OpenAI Response:", response);
+          const welcomeMessage = {
+            id: generateId(),
+            text: response?.response || "Hi Trainer! Let's get started!",
+            sender: 'trainer'
+          };
 
-          if (response && response.response) {
-            console.log("Setting greeting message:", response.response);
-            setMessages([{ id: 1, text: response.response, sender: 'trainer' }]);
-          } else {
-            const initialTrainerResponse = "Hi Trainer! Let's get started!";
-            console.log("Setting initial trainer message:", initialTrainerResponse);
-            setMessages([{ id: 1, text: initialTrainerResponse, sender: 'trainer' }]);
-          }
+          await set(ref(db, `chats/${encodedEmail}`), [welcomeMessage]);
         }
         setInitialized(true);
       } catch (error) {
-        console.error('Error initializing chat:', error);
+        console.error('Initialization error:', error);
+        setInitialized(true);
       }
     };
 
@@ -107,7 +121,7 @@ const Chat = ({ route, navigation }) => { // Added navigation as a prop
       duration: 3000,
       useNativeDriver: false,
     }).start();
-  }, [name, height, weight, bmi, exerciseLevel, house, selectedOptions]);
+  }, [name, house, selectedOptions]);
 
   const progressInterpolate = progress.interpolate({
     inputRange: [0, 1],
@@ -115,98 +129,79 @@ const Chat = ({ route, navigation }) => { // Added navigation as a prop
   });
 
   const takePicture = useCallback(async () => {
-    if (!permission.granted) {
+    if (!permission?.granted) {
       const { status } = await requestPermission();
       if (status !== 'granted') {
-        alert('Camera permission is required to take pictures.');
+        alert('Camera permission required');
         return;
       }
     }
 
     try {
-      if (cameraRef.current) {
-        const options = { quality: 0.5, base64: true };
-        const data = await cameraRef.current.takePictureAsync(options);
-        const newImageMessage = { id: messages.length + 1, imageUri: data.uri, sender: 'user', type: 'image' };
-        const updatedMessagesWithImage = [...messages, newImageMessage];
-
-        setMessages(updatedMessagesWithImage);
-        setCameraVisible(false);
-
-        // Save chat to Firebase
-        await set(ref(db, `chats/${encodedEmail}`), updatedMessagesWithImage);
-      } else {
-        console.error("Camera reference is not available");
-      }
+      const data = await cameraRef.current.takePictureAsync({ quality: 0.5, base64: true });
+      const newImageMessage = { 
+        id: generateId(), 
+        imageUri: data.uri, 
+        sender: 'user', 
+        type: 'image' 
+      };
+      const updatedMessages = [...messages, newImageMessage];
+      
+      await set(ref(db, `chats/${encodedEmail}`), updatedMessages);
+      setCameraVisible(false);
     } catch (error) {
       console.error('Error capturing image:', error);
+      Alert.alert("Error", "Could not take picture");
     }
   }, [permission, messages, encodedEmail]);
 
   const sendMessage = useCallback(async () => {
-    if (input.trim()) {
-      setIsLoading(true);
-      const newMessage = { id: messages.length + 1, text: input, sender: 'user' };
-      const updatedMessages = [...messages, newMessage];
-      setMessages(updatedMessages);
+    if (!input.trim()) return;
+
+    setIsLoading(true);
+    const newUserMessage = { id: generateId(), text: input, sender: 'user' };
+    const updatedMessages = [...messages, newUserMessage];
+    
+    try {
+      await set(ref(db, `chats/${encodedEmail}`), updatedMessages);
       setInput('');
 
-      try {
-        const response = await getFitnessResponse({
-          ...userInfo,
-          message: input,
-        });
+      const response = await getFitnessResponse({ ...userInfo, message: input });
+      
+      if (response?.response) {
+        const pointsEarned = response.counters?.points || 0;
+        setPoints(prev => prev + pointsEarned);
+        setTasks(response.dailyTasks || []);
 
-        console.log('Raw OpenAI Response:', response);
+        const botResponse = {
+          id: generateId(),
+          text: response.response,
+          sender: 'trainer',
+          points: pointsEarned,
+          exerciseDetails: response.exerciseDetails,
+          youtubeLink: response.youtubeLink,
+        };
 
-        if (response && response.response) {
-          console.log("Valid response received:", response);
-
-          const pointsEarned = response.counters.points;
-          console.log("Points earned:", pointsEarned);
-
-          setPoints((prevPoints) => prevPoints + pointsEarned);
-          setTasks(response.dailyTasks); //set the tasks
-
-          const botResponse = {
-            id: updatedMessages.length + 1,
-            text: response.response,
-            sender: 'trainer',
-            type: 'text',
-            points: pointsEarned,
-            exerciseDetails: response.exerciseDetails,
-            youtubeLink: response.youtubeLink,
-          };
-
-          console.log("Bot response object:", botResponse);
-
-          const finalMessages = [...updatedMessages, botResponse];
-          console.log("Final messages before state update:", finalMessages);
-
-          try {
-            await set(ref(db, `chats/${encodedEmail}`), finalMessages);
-            console.log("Chat saved to Firebase successfully.");
-          } catch (error) {
-            console.error("Error saving chat to Firebase:", error);
-          }
-
-          setMessages(finalMessages);
-        } else {
-          console.error('Invalid response structure from OpenAI:', response);
-          setMessages([...updatedMessages, { id: updatedMessages.length + 1, text: "Sorry, something went wrong. Please try again.", sender: 'trainer' }]);
-        }
-      } catch (error) {
-        console.error('Error sending message:', error);
-        let errorMessage = "Sorry, something went wrong. Please try again.";
-        if (error.message.includes("exerciseDetails")) {
-          errorMessage = "Sorry, I couldn't generate a valid exercise plan. Please try again.";
-        } else if (error.message.includes("network")) {
-          errorMessage = "Network error. Please check your connection and try again.";
-        }
-        setMessages([...updatedMessages, { id: updatedMessages.length + 1, text: errorMessage, sender: 'trainer' }]);
-      } finally {
-        setIsLoading(false);
+        const finalMessages = [...updatedMessages, botResponse];
+        await set(ref(db, `chats/${encodedEmail}`), finalMessages);
+      } else {
+        throw new Error('Invalid response structure');
       }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      const errorMessage = error.message.includes("network") 
+        ? "Network error. Please check your connection." 
+        : "Sorry, something went wrong. Please try again.";
+      
+      const errorMessageObj = { 
+        id: generateId(), 
+        text: errorMessage, 
+        sender: 'trainer' 
+      };
+      const errorMessages = [...updatedMessages, errorMessageObj];
+      await set(ref(db, `chats/${encodedEmail}`), errorMessages);
+    } finally {
+      setIsLoading(false);
     }
   }, [input, userInfo, messages, encodedEmail]);
 
@@ -216,60 +211,38 @@ const Chat = ({ route, navigation }) => { // Added navigation as a prop
     return videoIdMatch ? `https://www.youtube.com/embed/${videoIdMatch[1]}` : url;
   };
 
-  const isValidUrl = (url) => {
-    try {
-      new URL(url);
-      return true;
-    } catch (error) {
-      return false;
-    }
-  };
-
-  const sanitizeCounters = (counters) => {
-    if (!counters) {
-      return { calories: 0, points: 0, tasksCompleted: 0 };
-    }
-    return {
-      calories: isNaN(Number(counters.calories)) ? 0 : Number(counters.calories),
-      points: isNaN(Number(counters.points)) ? 0 : Number(counters.points),
-      tasksCompleted: isNaN(Number(counters.tasksCompleted)) ? 0 : Number(counters.tasksCompleted),
-    };
-  };
-
   const handleTutorial = (messageId) => {
-    const message = messages.find((msg) => msg.id === messageId);
-
-    if (message && message.youtubeLink) {
-      const tutorialMessage = {
-        id: messages.length + 1,
-        text: "Here's a guided tutorial!",
-        sender: "trainer",
-        youtubeLink: message.youtubeLink,
-        type: "video",
-      };
-
-      setMessages([...messages, tutorialMessage]);
-    } else {
-      const noVideoMessage = {
-        id: messages.length + 1,
-        text: "Sorry, I couldn't find a tutorial for that exercise.",
-        sender: "trainer",
-      };
-      setMessages([...messages, noVideoMessage]);
-    }
-  };
-
-  const handleCompleted = (messageId) => {
-    setPoints((prevPoints) => prevPoints + 5);
-
-    const completedMessage = {
-      id: messages.length + 1,
-      text: "Great job!",
+    const message = messages.find(msg => msg.id === messageId);
+    const newMessage = {
+      id: generateId(),
+      text: message?.youtubeLink 
+        ? "Here's a guided tutorial!" 
+        : "Sorry, I couldn't find a tutorial for that exercise.",
       sender: "trainer",
+      ...(message?.youtubeLink && { 
+        youtubeLink: message.youtubeLink,
+        type: "video" 
+      })
     };
-
-    setMessages([...messages, completedMessage]);
+    setMessages(prev => [...prev, newMessage]);
   };
+
+  const handleCompleted = () => {
+    setPoints(prev => prev + 5);
+    const completedMessage = { 
+      id: generateId(), 
+      text: "Great job!", 
+      sender: "trainer" 
+    };
+    
+    // Update both local and Firebase state
+    setMessages(prev => {
+      const newMessages = [...prev, completedMessage];
+      set(ref(db, `chats/${encodedEmail}`), newMessages);
+      return newMessages;
+    });
+  };
+
   if (!initialized) {
     return (
       <ImageBackground source={getBackgroundImage()} style={styles.Loading_backgroundImage}>
@@ -286,7 +259,7 @@ const Chat = ({ route, navigation }) => { // Added navigation as a prop
   if (cameraVisible) {
     return (
       <View style={styles.cameraContainer}>
-        <CameraView style={styles.cameraPreview} ref={cameraRef} onCameraReady={() => console.log('Camera ready')}>
+        <CameraView style={styles.cameraPreview} ref={cameraRef}>
           <View style={styles.captureButtonContainer}>
             <TouchableOpacity onPress={takePicture} style={styles.captureButton}>
               <Text style={styles.captureButtonText}>SNAP</Text>
@@ -298,117 +271,114 @@ const Chat = ({ route, navigation }) => { // Added navigation as a prop
   }
 
   return (
-
     <ImageBackground source={require('../assets/gradientBG.png')} style={styles.backgroundImage}>
-      {/* Top Navigation */}
       <View style={styles.topNavContainer}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Dashboard', {
-          recommended_calories_per_day,
-          points,
-          tasks,
-          name
-        })}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => navigation.navigate('Dashboard', {
+            userInfo,
+            points,
+            tasks
+          })}
+        >
           <Image source={require('../assets/back-icon.png')} style={styles.backIcon} />
         </TouchableOpacity>
-        <View style={styles.titleContainer}></View>
         <View style={styles.pointsContainer}>
           <Image source={require('../assets/points-icon.png')} style={styles.pointsIcon} />
-          <Text style={styles.pointsText}>
-            {points || 0}
-          </Text>
+          <Text style={styles.pointsText}>{points}</Text>
         </View>
       </View>
 
       <View style={styles.container}>
-
-
-
-        <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
-          {messages.map((message, index) => {
-            console.log("Rendering message:", message);
-
-            return (
-              <View key={message.id || index} style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}>
-                {/* Parent Container for Message and Exercise Details/Buttons */}
-                <View style={{ flexDirection: 'column' }}>
-                  {/* Message and Profile Picture */}
-                  <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                    {/* User Message: Avatar on the right, message bubble on the left */}
-                    {message.sender === 'user' && (
-                      <>
-                        <View style={styles.userBubble}>
-                          <Text style={styles.userText}>{message.text}</Text>
-                        </View>
-                        <Image source={trainerAvatar} style={styles.profilePic} />
-                      </>
-                    )}
-
-                    {/* Trainer Message: Avatar on the left, message bubble on the right */}
-                    {message.sender === 'trainer' && (
-                      <>
-                        <Image source={trainerAvatar} style={styles.profilePic} />
-                        <View style={styles.trainerBubble}>
-                          <Text style={styles.trainerText}>{message.text}</Text>
-                        </View>
-                      </>
-                    )}
-                  </View>
-
-                  {/* Videos and Images */}
-                  {message.type === 'video' && isValidUrl(message.youtubeLink) ? (
-                    <View style={styles.videoContainer}>
-                      <WebView
-                        source={{ uri: convertToEmbedUrl(message.youtubeLink) }}
-                        style={{ width: '100%', height: 173 }}
-                        allowsFullscreenVideo={true}
-                        javaScriptEnabled={true}
-                      />
-                    </View>
-                  ) : message.type === 'image' ? (
-                    <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
-                  ) : null}
-
-                  {/* Exercise Details and Buttons */}
-                  {message.exerciseDetails && (
-                    <View style={{ flexDirection: 'column', alignSelf: 'flex-start', maxWidth: '90%' }}>
-                      <View style={styles.exerciseDetailsBox}>
-                        {Array.isArray(message.exerciseDetails) ? (
-                          message.exerciseDetails.map((exercise, i) => (
-                            <Text key={i} style={styles.exerciseDetailsText}>
-                              {exercise.exercise} - {exercise.sets} sets of {exercise.reps} reps
-                            </Text>
-                          ))
-                        ) : (
-                          typeof message.exerciseDetails === 'object' && message.exerciseDetails.exercise ? (
-                            <Text style={styles.exerciseDetailsText}>
-                              {message.exerciseDetails.exercise} - {message.exerciseDetails.sets} sets of {message.exerciseDetails.reps} reps
-                            </Text>
-                          ) : null
-                        )}
+        <ScrollView 
+          ref={scrollViewRef}
+          style={styles.messagesContainer}
+          contentContainerStyle={styles.messagesContent}
+          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+        >
+          {messages.map((message) => (
+            <View key={message.id} style={message.sender === 'trainer' ? styles.trainerMessage : styles.userMessage}>
+              <View style={{ flexDirection: 'column' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                  {message.sender === 'user' ? (
+                    <>
+                      <View style={styles.userBubble}>
+                        <Text style={styles.userText}>{message.text}</Text>
                       </View>
-                      <View style={styles.buttonContainer}>
-                        <TouchableOpacity style={styles.completedButton} onPress={() => handleCompleted(message.id)}>
-                          <Text style={styles.buttonText}>Completed</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.tutorialButton} onPress={() => handleTutorial(message.id)}>
-                          <Text style={styles.buttonText}>Need Tutorial</Text>
-                        </TouchableOpacity>
+                      <Image source={trainerAvatar} style={styles.profilePic} />
+                    </>
+                  ) : (
+                    <>
+                      <Image source={trainerAvatar} style={styles.profilePic} />
+                      <View style={styles.trainerBubble}>
+                        <Text style={styles.trainerText}>{message.text}</Text>
                       </View>
-                    </View>
+                    </>
                   )}
                 </View>
+
+                {message.type === 'video' && message.youtubeLink && (
+                  <View style={styles.videoContainer}>
+                    <WebView
+                      source={{ uri: convertToEmbedUrl(message.youtubeLink) }}
+                      style={styles.webView}
+                      allowsFullscreenVideo
+                      javaScriptEnabled
+                    />
+                  </View>
+                )}
+
+                {message.type === 'image' && (
+                  <Image source={{ uri: message.imageUri }} style={styles.capturedImage} />
+                )}
+
+                {message.exerciseDetails && (
+                  <View style={styles.exerciseContainer}>
+                    <View style={styles.exerciseDetailsBox}>
+                      {Array.isArray(message.exerciseDetails) ? (
+                        message.exerciseDetails.map((exercise, i) => (
+                          <Text key={`${message.id}-ex-${i}`} style={styles.exerciseDetailsText}>
+                            {exercise.exercise} - {exercise.sets} sets of {exercise.reps} reps
+                          </Text>
+                        ))
+                      ) : (
+                        message.exerciseDetails.exercise && (
+                          <Text style={styles.exerciseDetailsText}>
+                            {message.exerciseDetails.exercise} - {message.exerciseDetails.sets} sets of {message.reps} reps
+                          </Text>
+                        )
+                      )}
+                    </View>
+                    <View style={styles.buttonContainer}>
+                      <TouchableOpacity 
+                        style={styles.completedButton} 
+                        onPress={() => handleCompleted(message.id)}
+                      >
+                        <Text style={styles.buttonText}>Completed</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.tutorialButton} 
+                        onPress={() => handleTutorial(message.id)}
+                      >
+                        <Text style={styles.buttonText}>Need Tutorial</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
               </View>
-            );
-          })}
+            </View>
+          ))}
         </ScrollView>
 
-        {/* Input Container */}
         <View style={styles.inputContainer}>
           {isLoading ? (
             <ActivityIndicator size="small" color="#0000ff" />
           ) : (
             <>
-              <TouchableOpacity onPress={() => setCameraVisible(true)} style={styles.cameraButton}>
+              <TouchableOpacity 
+                onPress={() => setCameraVisible(true)} 
+                style={styles.cameraButton}
+              >
                 <Image source={require('../assets/camera.png')} style={styles.cameraIcon} />
               </TouchableOpacity>
               <TextInput
@@ -417,8 +387,13 @@ const Chat = ({ route, navigation }) => { // Added navigation as a prop
                 onChangeText={setInput}
                 placeholder="Type your questions..."
                 placeholderTextColor="#888"
+                onSubmitEditing={sendMessage}
               />
-              <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
+              <TouchableOpacity 
+                onPress={sendMessage} 
+                style={styles.sendButton}
+                disabled={!input.trim()}
+              >
                 <Image source={require('../assets/send.png')} style={styles.sendIcon} />
               </TouchableOpacity>
             </>
@@ -430,4 +405,3 @@ const Chat = ({ route, navigation }) => { // Added navigation as a prop
 };
 
 export default React.memo(Chat);
-
