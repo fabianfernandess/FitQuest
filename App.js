@@ -12,6 +12,7 @@ import SignUpScreen from './Screens/signUpScreen';
 import UserInfoScreen from './Screens/userInfoScreen';
 import BMIScreen from './Screens/BMIScreen';
 import ExerciseLevelScreen from './Screens/exerciseLevelScreen';
+import dashboard from './Screens/dashboard';
 
 const Stack = createNativeStackNavigator();
 
@@ -97,6 +98,7 @@ export default function App() {
             <Stack.Screen name="HouseSelection" component={HouseSelectionScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Chat" component={Chat} options={{ headerShown: false }} />
             <Stack.Screen name="ExerciseLevel" component={ExerciseLevelScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Dashboard" component={dashboard} options={{ headerShown: false }} />
           </>
         ) : (
           <>
