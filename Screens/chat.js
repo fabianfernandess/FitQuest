@@ -69,7 +69,11 @@ const Chat = ({ route, navigation }) => {
     const unsubscribe = onValue(dbRef, (snapshot) => {
       if (snapshot.exists()) {
         setMessages(snapshot.val());
+      } else {
+        console.log("No chat data found for:", encodedEmail);
       }
+    }, (error) => {
+      console.error("Firebase read failed:", error);
     });
 
     return () => unsubscribe();

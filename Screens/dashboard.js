@@ -91,19 +91,13 @@ const DashboardScreen = ({ route, navigation }) => {
             </ScrollView>
 
             <View style={styles.bottomBar}>
-                <TouchableOpacity onPress={() => navigation.navigate('Chat', {
-                    userInfo: {
-                        name,
-                        recommended_calories_per_day
-                    },
-                    points,
-                    tasks
-                })}>
+                    <TouchableOpacity onPress={() => navigation.navigate('Chat', { userInfo: route.params?.userInfo })}>
                     <Image
                         source={require("../assets/avatarAI.png")}
-                        style={styles.bottomAvatar}
-                    />
-                </TouchableOpacity>
+                    style={styles.bottomAvatar}
+                        />
+                    </TouchableOpacity>
+                
             </View>
         </View>
     );
