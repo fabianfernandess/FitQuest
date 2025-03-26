@@ -169,6 +169,8 @@ const styles = StyleSheet.create({
     greetingSection: {
         padding: 16,
         zIndex: 1,
+        backgroundColor:'rgba(3, 201, 136, 0.24)',
+        borderRadius:16
     },
     date: {
         color: '#888',
@@ -198,11 +200,12 @@ const styles = StyleSheet.create({
     },
     dataCard: {
         flex: 1,
-        backgroundColor: 'rgba(34, 34, 34, 0.8)',
-        borderRadius: 10,
+        backgroundColor: 'rgba(103, 122, 132, 0.19)',
+        borderRadius: 16,
         padding: 16,
         minHeight: 100,
     },
+
     cardTitle: {
         color: '#fff',
         fontSize: 16,
@@ -218,7 +221,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around',
         padding: 16,
         zIndex: 1,
-        backgroundColor: 'rgba(34, 34, 34, 0.8)',
+        // backgroundColor: 'rgba(34, 34, 34, 0.8)',
         borderRadius: 10,
         marginHorizontal: 16,
         marginBottom: 16,
@@ -237,8 +240,6 @@ const styles = StyleSheet.create({
     todaysPlan: {
         padding: 16,
         zIndex: 1,
-        backgroundColor: 'rgba(34, 34, 34, 0.8)',
-        borderRadius: 10,
         marginHorizontal: 16,
         marginBottom: 16,
     },
@@ -252,8 +253,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#333',
+        backgroundColor: 'rgba(103, 122, 132, 0.19)',
+        marginBottom:22,
+        borderRadius:8,
     },
     planTime: {
         color: '#888',
