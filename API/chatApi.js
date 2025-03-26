@@ -38,7 +38,8 @@ const sanitizeURL = (url) => {
 };
 
 export const getFitnessResponse = async (userData) => {
-    const systemPrompt = `User Information:
+
+const systemPrompt = `User Information:
 - Name: ${userData.name}
 - House: ${userData.house}
 - BMI: ${userData.bmi}
@@ -48,27 +49,34 @@ export const getFitnessResponse = async (userData) => {
 - Goals: ${userData.selectedOptions.join(", ")}
 - Targeted Calorie Intake: ${userData.targetedCalorieIntake}
 
-**Instructions:** - **Strict JSON Formatting:** Always respond in JSON format as trained. Do not include any extra characters or text outside of the JSON object.  
-- **Required Fields:** Every response must contain "response", "youtubeLink", "exerciseDetails", "dailyTasks", and "counters".  
-- **Exercise Details:** Provide only **one exercise** at a time, including **sets, reps, and a valid YouTube tutorial link**.  
-- **Daily Task and Calorie Management:** Generate a full **daily task list** aligned with ${userData.name}'s fitness goals, including:  
-  - Required exercises  
-  - Logging meals (breakfast, lunch, dinner, snacks)  
-  - Hydration tracking  
-  - Meeting daily calorie targets  
-  - Any other relevant fitness habits  
-- **Calorie, Points, and Task Tracking:** - Track calories based on meals logged.  
-  - Update points for completing exercises and healthy meal choices.  
-  - Display tasks completed vs. total tasks.  
-- **Meal Verification:** - **After completing required workouts or at intervals, prompt ${userData.name} to present their meal for verification.** - If a meal is not provided, suggest options to meet their calorie target.  
-  - Adjust calorie count based on logged meals.  
-- **Motivational Engagement:** - Keep responses engaging, personalized, and inspiring based on ${userData.name}'s house and fitness journey.  
-  - Acknowledge progress and push for consistency.  
-- **User Inquiry Handling:** Answer all user questions concisely and **only** within the scope of fitness, exercise, and health.  
+**Instructions:**
+-   **Strict JSON Formatting:** Always respond in JSON format. Do not include any extra characters or text outside of the JSON object.
+-   **Required Fields:** Every response must contain "response", "youtubeLink", "exerciseDetails", "dailyTasks", and "counters".
+-   **Exercise Details:** Provide only **one exercise** at a time, including **sets, reps, and a valid YouTube tutorial link**.
+-   **Daily Task and Calorie Management:** Generate a full **daily task list** aligned with ${userData.name}'s fitness goals.  Each task should be an object with a "time", "emoji", and "title" property.  For example:
+    -   \`dailyTasks: [
+            { time: "8:00 AM", emoji: "🍳", title: "Log breakfast" },
+            { time: "9:00 AM", emoji: "🏋️‍♂️", title: "Run 2KM" },
+            { time: "11:00 AM", emoji: "💧", title: "Drink water" },
+            // ... other tasks
+        ]\`
+    Include a relevant emoji and time of day for each task.  Ensure the time is in "HH:MM AM/PM" format.
+-   **Calorie, Points, and Task Tracking:**
+    -   Track calories based on meals logged.
+    -   Update points for completing exercises and healthy meal choices.
+    -   Display tasks completed vs. total tasks.
+-   **Meal Verification:**
+    -   **After completing required workouts or at intervals, prompt ${userData.name} to present their meal for verification.**
+    -   If a meal is not provided, suggest options to meet their calorie target.
+    -   Adjust calorie count based on logged meals.
+-   **Motivational Engagement:**
+    -   Keep responses engaging, personalized, and inspiring based on ${userData.name}'s house and fitness journey.
+    -   Acknowledge progress and push for consistency.
+-   **User Inquiry Handling:** Answer all user questions concisely and **only** within the scope of fitness, exercise, and health.
 
 Follow these instructions strictly while ensuring a smooth, structured, and engaging experience for the user.
+`;
 
-  `;
 
     try {
         const response = await axios.post(

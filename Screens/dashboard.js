@@ -77,18 +77,15 @@ const DashboardScreen = ({ route, navigation }) => {
 
                 <View style={styles.todaysPlan}>
                     <Text style={styles.planTitle}>Today's plan</Text>
-                    {tasks.length > 0 ? (
+                        {tasks.length > 0 ? (
                         tasks.map((item, index) => (
-                            <View 
-                                key={`task-${index}-${item.substring(0,5)}`} 
-                                style={styles.planItem}
-                            >
-                                <Text style={styles.planTime}>•</Text>
-                                <Text style={styles.planText}>{item}</Text>
-                            </View>
-                        ))
-                    ) : (
-                        <Text style={styles.noPlanText}>No tasks for today.</Text>
+                    <View key={index} style={styles.planItem}>
+                        <Text style={styles.planTime}>{item.time}</Text>
+                        <Text style={styles.planText}>{item.emoji} {item.title}</Text>
+                    </View>
+                    ))
+                     ) : (
+                    <Text style={styles.noPlanText}>No tasks for today.</Text>
                     )}
                 </View>
             </ScrollView>
