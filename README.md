@@ -1,1 +1,1 @@
-# FitQuest
+To run the project open it through expo and use it either on Android or IOS simulator
